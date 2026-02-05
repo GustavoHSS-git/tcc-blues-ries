@@ -151,51 +151,56 @@ async function showSeriesDetail(seriesId) {
         
         let userRatingSection = '';
         if (currentUser) {
-            const userRatingData = await API.getRating(seriesId);
-            const userRating = userRatingData.rating;
-            
-            userRatingSection = `
-                <div class="rating-section">
-                    <h3>Sua Avaliação</h3>
-                    <form class="rating-form" onsubmit="submitRating(event, ${seriesId})">
-                        <div class="form-group">
-                            <label>Avaliação</label>
-                            <div class="stars" id="ratingStars">
-                                ${[1, 2, 3, 4, 5].map(i => `
-                                    <span class="star ${userRating && userRating.rating >= i ? 'active' : ''}" 
-                                          data-rating="${i}" 
-                                          onclick="setRating(${i})">★</span>
-                                `).join('')}
+            try {
+                const userRatingData = await API.getRating(seriesId);
+                
+                // PROTEÇÃO: No Postgres, se não existe, ele pode vir undefined ou null
+                // Garantimos que 'userRating' seja o objeto de avaliação ou null
+                const userRating = (userRatingData && userRatingData.rating_data) ? userRatingData.rating_data : null;
+                
+                // Pegamos os valores com segurança usando o operador '||' (ou)
+                const currentStars = userRating ? userRating.rating : 0;
+                const currentStatus = userRating ? userRating.status : 'watching';
+                const currentReview = userRating ? userRating.review : '';
+
+                userRatingSection = `
+                    <div class="rating-section">
+                        <h3>Sua Avaliação</h3>
+                        <form class="rating-form" onsubmit="submitRating(event, ${seriesId})">
+                            <div class="form-group">
+                                <label>Avaliação</label>
+                                <div class="stars" id="ratingStars">
+                                    ${[1, 2, 3, 4, 5].map(i => `
+                                        <span class="star ${currentStars >= i ? 'active' : ''}" 
+                                              data-rating="${i}" 
+                                              onclick="setRating(${i})">★</span>
+                                    `).join('')}
+                                </div>
+                                <input type="hidden" name="rating" id="ratingValue" value="${currentStars}">
                             </div>
-                            <input type="hidden" name="rating" id="ratingValue" value="${userRating ? userRating.rating : '0'}">
-                        </div>
-                        <div class="form-group">
-                            <label>Status</label>
-                            <select name="status" required>
-                                <option value="watching" ${userRating && userRating.status === 'watching' ? 'selected' : ''}>Assistindo</option>
-                                <option value="completed" ${userRating && userRating.status === 'completed' ? 'selected' : ''}>Completei</option>
-                                <option value="plan_to_watch" ${userRating && userRating.status === 'plan_to_watch' ? 'selected' : ''}>Planejo Assistir</option>
-                                <option value="dropped" ${userRating && userRating.status === 'dropped' ? 'selected' : ''}>Dropei</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Review (opcional)</label>
-                            <textarea name="review" placeholder="Escreva sua opinião sobre a série...">${userRating && userRating.review ? userRating.review : ''}</textarea>
-                        </div>
-                        <button type="submit" class="btn btn-primary btn-block">Salvar Avaliação</button>
-                        ${userRating ? '<button type="button" class="btn btn-outline btn-block" onclick="deleteRating(' + seriesId + ')">Deletar Avaliação</button>' : ''}
-                    </form>
-                </div>
-            `;
-        } else {
-            userRatingSection = `
-                <div class="rating-section">
-                    <p style="text-align: center; color: var(--text-secondary);">
-                        <a href="#" onclick="showLogin()" style="color: var(--primary-color);">Faça login</a> 
-                        para avaliar esta série
-                    </p>
-                </div>
-            `;
+                            <div class="form-group">
+                                <label>Status</label>
+                                <select name="status" required>
+                                    <option value="watching" ${currentStatus === 'watching' ? 'selected' : ''}>Assistindo</option>
+                                    <option value="completed" ${currentStatus === 'completed' ? 'selected' : ''}>Completei</option>
+                                    <option value="plan_to_watch" ${currentStatus === 'plan_to_watch' ? 'selected' : ''}>Planejo Assistir</option>
+                                    <option value="dropped" ${currentStatus === 'dropped' ? 'selected' : ''}>Dropei</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Review (opcional)</label>
+                                <textarea name="review" placeholder="Escreva sua opinião...">${currentReview}</textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-block">Salvar Avaliação</button>
+                            ${userRating ? `<button type="button" class="btn btn-outline btn-block" onclick="deleteRating(${seriesId})">Deletar Avaliação</button>` : ''}
+                        </form>
+                    </div>
+                `;
+            } catch (err) {
+                console.error("Erro ao buscar avaliação do usuário:", err);
+                // Se der erro na API, mostramos a seção vazia em vez de quebrar a página
+                userRatingSection = `<div class="rating-section"><p>Erro ao carregar sua avaliação.</p></div>`;
+            }
         }
         
         // Buscar avaliações da comunidade
@@ -342,49 +347,64 @@ async function deleteRating(seriesId) {
     }
 }
 
-// Carregar atividades recentes
 async function loadRecentActivity() {
-    const container = document.getElementById('activityFeed');
+    const container = document.getElementById('activityFeed'); // Verifique se o ID é activityFeed ou recentActivity
+    if (!container) return;
+
     container.innerHTML = '<div class="loading">Carregando atividades...</div>';
     
     try {
         const data = await API.getRecentActivity();
+        
+        // Proteção: Garante que activities seja sempre um array, mesmo se o banco estiver vazio
+        const activities = data && data.activities ? data.activities : [];
+        
         container.innerHTML = '';
         
-        if (data.activities.length === 0) {
+        if (activities.length === 0) {
             container.innerHTML = '<p class="placeholder-text">Nenhuma atividade recente</p>';
             return;
         }
         
-        for (const activity of data.activities.slice(0, 10)) {
-            // Buscar informações da série
-            const series = await TMDB_API.getSeriesDetails(activity.series_id);
-            
-            if (series) {
-                const activityItem = document.createElement('div');
-                activityItem.className = 'activity-item';
-                activityItem.onclick = () => showSeriesDetail(activity.series_id);
+        // Pegar apenas as 10 últimas atividades
+        for (const activity of activities.slice(0, 10)) {
+            try {
+                // Buscar informações da série no TMDB
+                const series = await TMDB_API.getSeriesDetails(activity.series_id);
                 
-                activityItem.innerHTML = `
-                    <img src="/uploads/${activity.avatar || 'default-avatar.png'}" 
-                         alt="${activity.username}" class="activity-avatar">
-                    <div class="activity-content">
-                        <div>
-                            <span class="activity-username">${activity.username}</span>
-                            avaliou
-                            <strong>${series.name}</strong>
+                if (series) {
+                    const activityItem = document.createElement('div');
+                    activityItem.className = 'activity-item';
+                    activityItem.onclick = () => showSeriesDetail(activity.series_id);
+                    
+                    // Tratamento para rating não quebrar se vier nulo do banco
+                    const rating = Math.round(activity.rating || 0);
+                    
+                    activityItem.innerHTML = `
+                        <img src="/uploads/${activity.avatar || 'default-avatar.png'}" 
+                             alt="${activity.username}" class="activity-avatar"
+                             onerror="this.src='/uploads/default-avatar.png'">
+                        <div class="activity-content">
+                            <div>
+                                <span class="activity-username">${activity.username}</span>
+                                avaliou
+                                <strong>${series.name || 'Série desconhecida'}</strong>
+                            </div>
+                            <div class="activity-text">
+                                ${'★'.repeat(rating)}${'☆'.repeat(5 - rating)}
+                                ${activity.review ? ` - "${activity.review.substring(0, 100)}${activity.review.length > 100 ? '...' : ''}"` : ''}
+                            </div>
+                            <div class="activity-date">
+                                ${new Date(activity.created_at).toLocaleDateString('pt-BR')}
+                            </div>
                         </div>
-                        <div class="activity-text">
-                            ${'★'.repeat(Math.round(activity.rating))}${'☆'.repeat(5 - Math.round(activity.rating))}
-                            ${activity.review ? ` - "${activity.review.substring(0, 100)}${activity.review.length > 100 ? '...' : ''}"` : ''}
-                        </div>
-                        <div class="activity-date">
-                            ${new Date(activity.created_at).toLocaleDateString('pt-BR')}
-                        </div>
-                    </div>
-                `;
-                
-                container.appendChild(activityItem);
+                    `;
+                    
+                    container.appendChild(activityItem);
+                }
+            } catch (tmdbError) {
+                console.error('Erro ao buscar detalhes da série no TMDB:', tmdbError);
+                // Continua para a próxima atividade sem travar
             }
         }
     } catch (error) {
