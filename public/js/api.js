@@ -164,4 +164,7 @@ const API = {
         const response = await fetch(`${APP_CONFIG.API_BASE}/recent-activity`);
         return await response.json();
     }
+
+    w
 };
+

@@ -5,17 +5,16 @@ const multer = require('multer');
 const { Pool } = require('pg');
 const path = require('path');
 const fs = require('fs');
-const cloudinary = require('cloudinary').v2; // Adicionado Cloudinary
-
+const cloudinary = require('cloudinary').v2; 
 const app = express();
 const PORT = process.env.PORT || 10000;
 
-// Configuração do Cloudinary (Substitua pelos seus dados do Dashboard)
+// Configuração do Cloudinary
+// DICA: Use process.env.CLOUDINARY_URL para não expor sua senha no GitHub
 cloudinary.config({ 
-  cloud_name: 'Gustavo',
-  api_key: '956751932938519', 
-  api_secret: 'EMAZtnyNZzIKBR5sA8rZasxcXZk' 
+  cloudinary_url: process.env.CLOUDINARY_URL || 'CLOUDINARY_URL=cloudinary://956751932938519:EMAZtnyNZzIKBR5sA8rZasxcXZk@ddwwhhika' 
 });
+
 
 // Configuração do Banco de Dados
 const db = new Pool({
