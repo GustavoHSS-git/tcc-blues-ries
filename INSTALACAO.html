@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SeriesBox - Instruções de Instalação</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0e27 0%, #14192d 100%);
+            color: #fff;
+            padding: 2rem;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: rgba(20, 25, 45, 0.9);
+            padding: 3rem;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+        h1 {
+            background: linear-gradient(135deg, #00d4ff, #ff006e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+        .subtitle {
+            text-align: center;
+            color: #a0a0a0;
+            font-size: 1.2rem;
+            margin-bottom: 3rem;
+        }
+        .section {
+            background: rgba(10, 14, 39, 0.5);
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            border-left: 4px solid #00d4ff;
+        }
+        h2 {
+            color: #00d4ff;
+            margin-bottom: 1rem;
+            font-size: 1.8rem;
+        }
+        h3 {
+            color: #ff006e;
+            margin: 1.5rem 0 0.8rem;
+            font-size: 1.3rem;
+        }
+        .code-block {
+            background: #000;
+            color: #0f0;
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 1rem 0;
+            font-family: 'Courier New', monospace;
+            border: 1px solid #333;
+        }
+        .step {
+            background: rgba(0, 212, 255, 0.1);
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            border-left: 3px solid #00d4ff;
+        }
+        .step-number {
+            display: inline-block;
+            background: #00d4ff;
+            color: #0a0e27;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 30px;
+            font-weight: bold;
+            margin-right: 0.5rem;
+        }
+        .feature-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        .feature-item {
+            background: rgba(255, 0, 110, 0.1);
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 0, 110, 0.3);
+        }
+        .feature-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        .warning {
+            background: rgba(255, 68, 68, 0.1);
+            padding: 1rem;
+            border-radius: 8px;
+            border-left: 3px solid #ff4444;
+            margin: 1rem 0;
+        }
+        .success {
+            background: rgba(0, 255, 136, 0.1);
+            padding: 1rem;
+            border-radius: 8px;
+            border-left: 3px solid #00ff88;
+            margin: 1rem 0;
+        }
+        .btn {
+            display: inline-block;
+            padding: 1rem 2rem;
+            background: linear-gradient(135deg, #00d4ff, #0099cc);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            margin: 0.5rem;
+            transition: transform 0.3s;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        .tech-stack {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin: 1rem 0;
+        }
+        .tech-badge {
+            background: rgba(0, 212, 255, 0.2);
+            color: #00d4ff;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            border: 1px solid #00d4ff;
+        }
+        footer {
+            text-align: center;
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: #a0a0a0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📺 SeriesBox</h1>
+        <p class="subtitle">Sua Plataforma de Avaliação de Séries</p>
+
+        <div class="section">
+            <h2>🎯 Sobre o Projeto</h2>
+            <p>O <strong>SeriesBox</strong> é uma plataforma web completa para avaliar e descobrir séries de TV, inspirada no Letterboxd. Desenvolvido com tecnologias modernas, oferece uma experiência fluida e intuitiva para amantes de séries.</p>
+            
+            <h3>✨ Funcionalidades Principais</h3>
+            <div class="feature-list">
+                <div class="feature-item">
+                    <div class="feature-icon">🔐</div>
+                    <strong>Autenticação Completa</strong>
+                    <p>Sistema de login e cadastro seguro com criptografia</p>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">⭐</div>
+                    <strong>Sistema de Avaliação</strong>
+                    <p>Avalie séries com estrelas e reviews textuais</p>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">👤</div>
+                    <strong>Perfis Personalizáveis</strong>
+                    <p>Bio, avatar e estatísticas pessoais</p>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">🔍</div>
+                    <strong>Busca Avançada</strong>
+                    <p>Encontre qualquer série rapidamente</p>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">📊</div>
+                    <strong>Estatísticas</strong>
+                    <p>Acompanhe suas avaliações e progresso</p>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">🌙</div>
+                    <strong>Design Moderno</strong>
+                    <p>Interface dark elegante e responsiva</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🛠️ Tecnologias Utilizadas</h2>
+            <div class="tech-stack">
+                <span class="tech-badge">HTML5</span>
+                <span class="tech-badge">CSS3</span>
+                <span class="tech-badge">JavaScript</span>
+                <span class="tech-badge">Node.js</span>
+                <span class="tech-badge">Express</span>
+                <span class="tech-badge">SQLite</span>
+                <span class="tech-badge">Bcrypt</span>
+                <span class="tech-badge">Multer</span>
+                <span class="tech-badge">TMDB API</span>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🚀 Como Instalar e Executar</h2>
+            
+            <div class="step">
+                <span class="step-number">1</span>
+                <strong>Pré-requisitos</strong>
+                <p>Certifique-se de ter o Node.js instalado (versão 14 ou superior)</p>
+                <div class="code-block">node --version</div>
+            </div>
+
+            <div class="step">
+                <span class="step-number">2</span>
+                <strong>Extrair o Projeto</strong>
+                <p>Extraia o arquivo ZIP para uma pasta de sua escolha</p>
+            </div>
+
+            <div class="step">
+                <span class="step-number">3</span>
+                <strong>Navegar até a Pasta</strong>
+                <div class="code-block">cd seriesbox</div>
+            </div>
+
+            <div class="step">
+                <span class="step-number">4</span>
+                <strong>Instalar Dependências</strong>
+                <div class="code-block">npm install</div>
+            </div>
+
+            <div class="step">
+                <span class="step-number">5</span>
+                <strong>Iniciar o Servidor</strong>
+                <div class="code-block">npm start</div>
+            </div>
+
+            <div class="step">
+                <span class="step-number">6</span>
+                <strong>Acessar no Navegador</strong>
+                <div class="code-block">http://localhost:3000</div>
+            </div>
+
+            <div class="success">
+                <strong>✅ Sucesso!</strong> O SeriesBox está rodando e pronto para uso!
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>📖 Guia de Uso</h2>
+            
+            <h3>1. Criar uma Conta</h3>
+            <p>• Clique em "Cadastrar" no canto superior direito<br>
+            • Preencha username, email e senha<br>
+            • Faça login automaticamente</p>
+
+            <h3>2. Explorar Séries</h3>
+            <p>• Navegue pelas seções: Populares, Top Avaliadas, Novidades<br>
+            • Use a barra de busca para encontrar séries específicas<br>
+            • Clique em uma série para ver detalhes completos</p>
+
+            <h3>3. Avaliar Séries</h3>
+            <p>• Abra a página de detalhes de uma série<br>
+            • Selecione suas estrelas (1-5)<br>
+            • Escolha o status (assistindo, completou, etc.)<br>
+            • Escreva uma review (opcional)<br>
+            • Clique em "Salvar Avaliação"</p>
+
+            <h3>4. Personalizar Perfil</h3>
+            <p>• Clique no seu avatar no header<br>
+            • Selecione "Meu Perfil"<br>
+            • Faça upload de foto<br>
+            • Escreva uma bio<br>
+            • Veja suas estatísticas</p>
+        </div>
+
+        <div class="section">
+            <h2>🔧 Estrutura do Projeto</h2>
+            <div class="code-block">seriesbox/
+├── public/              # Frontend
+│   ├── css/            # Estilos
+│   ├── js/             # JavaScript
+│   ├── uploads/        # Avatares
+│   └── index.html      # Página principal
+├── server.js           # Backend
+├── package.json        # Dependências
+├── seriesbox.db        # Banco de dados
+└── README.md           # Documentação</div>
+        </div>
+
+        <div class="section">
+            <h2>⚠️ Observações Importantes</h2>
+            
+            <div class="warning">
+                <strong>Porta 3000:</strong> O servidor roda na porta 3000. Se estiver ocupada, altere no arquivo <code>server.js</code>.
+            </div>
+
+            <div class="warning">
+                <strong>TMDB API:</strong> O projeto usa a API do The Movie Database. Uma chave de exemplo está incluída, mas para uso em produção, registre-se em <a href="https://www.themoviedb.org/" target="_blank" style="color: #00d4ff;">themoviedb.org</a> e obtenha sua própria chave.
+            </div>
+
+            <div class="warning">
+                <strong>Uploads:</strong> Avatares são salvos em <code>public/uploads/</code>. Certifique-se de que a pasta existe e tem permissões de escrita.
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🐛 Solução de Problemas</h2>
+            
+            <h3>Servidor não inicia</h3>
+            <p>• Verifique se a porta 3000 está livre<br>
+            • Execute <code>npm install</code> novamente<br>
+            • Verifique se o Node.js está instalado corretamente</p>
+
+            <h3>Imagens não aparecem</h3>
+            <p>• Verifique sua conexão com a internet<br>
+            • As imagens vêm da API do TMDB<br>
+            • Verifique se a chave da API está válida</p>
+
+            <h3>Erro ao fazer login</h3>
+            <p>• Verifique se o banco de dados foi criado<br>
+            • Tente excluir <code>seriesbox.db</code> e reinicie o servidor<br>
+            • Limpe os cookies do navegador</p>
+        </div>
+
+        <div class="section">
+            <h2>🎨 Personalização</h2>
+            <p>Você pode personalizar as cores do tema editando o arquivo <code>public/css/styles.css</code>:</p>
+            <div class="code-block">:root {
+    --primary-color: #00d4ff;      /* Cor primária */
+    --secondary-color: #ff006e;    /* Cor secundária */
+    --bg-dark: #0a0e27;            /* Fundo escuro */
+    --bg-card: #14192d;            /* Fundo de cards */
+}</div>
+        </div>
+
+        <div class="section">
+            <h2>📚 Recursos Adicionais</h2>
+            <p>• <strong>README.md:</strong> Documentação completa do projeto<br>
+            • <strong>Comentários no código:</strong> O código está bem comentado para facilitar o entendimento<br>
+            • <strong>API RESTful:</strong> Todas as rotas estão documentadas no README</p>
+        </div>
+
+        <footer>
+            <p><strong>SeriesBox v1.0</strong></p>
+            <p>Desenvolvido com ❤️ e muito ☕</p>
+            <p>Aproveite e boas maratonas! 📺🍿</p>
+        </footer>
+    </div>
+</body>
+</html>
