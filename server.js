@@ -2,52 +2,23 @@ const express = require('express');
 const session = require('express-session');
 const bcrypt = require('bcryptjs');
 const multer = require('multer');
-const sqlite3 = require('sqlite3').verbose();
+const { Pool } = require('pg'); // Mudança para PostgreSQL
 const path = require('path');
 const fs = require('fs');
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
-// Configuração do banco de dados
-const db = new sqlite3.Database('./seriesbox.db', (err) => {
-    if (err) console.error('Erro ao conectar ao banco:', err);
-    else console.log('Conectado ao banco de dados SQLite');
+// Configuração do banco de dados (Supabase/PostgreSQL)
+const db = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: {
+        rejectUnauthorized: false // Obrigatório para o Render conectar ao Supabase
+    }
 });
 
-// Criar tabelas
-db.serialize(() => {
-    db.run(`CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT UNIQUE NOT NULL,
-        email TEXT UNIQUE NOT NULL,
-        password TEXT NOT NULL,
-        bio TEXT,
-        avatar TEXT DEFAULT 'default-avatar.png',
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )`);
-
-    db.run(`CREATE TABLE IF NOT EXISTS ratings (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER NOT NULL,
-        series_id INTEGER NOT NULL,
-        rating REAL NOT NULL,
-        review TEXT,
-        status TEXT DEFAULT 'watching',
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (user_id) REFERENCES users(id),
-        UNIQUE(user_id, series_id)
-    )`);
-
-    db.run(`CREATE TABLE IF NOT EXISTS watchlist (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER NOT NULL,
-        series_id INTEGER NOT NULL,
-        status TEXT DEFAULT 'plan_to_watch',
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (user_id) REFERENCES users(id),
-        UNIQUE(user_id, series_id)
-    )`);
+db.on('connect', () => {
+    console.log('🚀 Conectado ao banco de dados PostgreSQL no Supabase');
 });
 
 // Configuração de upload de imagens
@@ -99,35 +70,29 @@ app.post('/api/register', async (req, res) => {
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
         
-        db.run(
-            'INSERT INTO users (username, email, password) VALUES (?, ?, ?)',
-            [username, email, hashedPassword],
-            function(err) {
-                if (err) {
-                    if (err.message.includes('UNIQUE')) {
-                        return res.status(400).json({ error: 'Usuário ou email já existe' });
-                    }
-                    return res.status(500).json({ error: 'Erro ao criar usuário' });
-                }
-                
-                req.session.userId = this.lastID;
-                req.session.username = username;
-                res.json({ success: true, userId: this.lastID, username });
-            }
+        const result = await db.query(
+            'INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING id',
+            [username, email, hashedPassword]
         );
+        
+        const newUserId = result.rows[0].id;
+        req.session.userId = newUserId;
+        req.session.username = username;
+        res.json({ success: true, userId: newUserId, username });
     } catch (error) {
-        res.status(500).json({ error: 'Erro no servidor' });
+        if (error.message.includes('unique')) {
+            return res.status(400).json({ error: 'Usuário ou email já existe' });
+        }
+        res.status(500).json({ error: 'Erro ao criar usuário' });
     }
 });
 
 // Login
-app.post('/api/login', (req, res) => {
+app.post('/api/login', async (req, res) => {
     const { email, password } = req.body;
-
-    db.get('SELECT * FROM users WHERE email = ?', [email], async (err, user) => {
-        if (err) {
-            return res.status(500).json({ error: 'Erro no servidor' });
-        }
+    try {
+        const result = await db.query('SELECT * FROM users WHERE email = $1', [email]);
+        const user = result.rows[0];
         
         if (!user) {
             return res.status(400).json({ error: 'Email ou senha inválidos' });
@@ -146,7 +111,9 @@ app.post('/api/login', (req, res) => {
             username: user.username,
             avatar: user.avatar
         });
-    });
+    } catch (error) {
+        res.status(500).json({ error: 'Erro no servidor' });
+    }
 });
 
 // Logout
@@ -156,17 +123,16 @@ app.post('/api/logout', (req, res) => {
 });
 
 // Verificar sessão
-app.get('/api/check-session', (req, res) => {
+app.get('/api/check-session', async (req, res) => {
     if (req.session.userId) {
-        db.get('SELECT id, username, email, bio, avatar FROM users WHERE id = ?', 
-            [req.session.userId], 
-            (err, user) => {
-                if (err || !user) {
-                    return res.json({ authenticated: false });
-                }
-                res.json({ authenticated: true, user });
-            }
-        );
+        try {
+            const result = await db.query('SELECT id, username, email, bio, avatar FROM users WHERE id = $1', [req.session.userId]);
+            const user = result.rows[0];
+            if (!user) return res.json({ authenticated: false });
+            res.json({ authenticated: true, user });
+        } catch (err) {
+            res.json({ authenticated: false });
+        }
     } else {
         res.json({ authenticated: false });
     }
@@ -175,184 +141,123 @@ app.get('/api/check-session', (req, res) => {
 // ============= ROTAS DE USUÁRIO =============
 
 // Obter perfil do usuário
-app.get('/api/user/:id', (req, res) => {
+app.get('/api/user/:id', async (req, res) => {
     const userId = req.params.id;
-    
-    db.get('SELECT id, username, email, bio, avatar, created_at FROM users WHERE id = ?', 
-        [userId], 
-        (err, user) => {
-            if (err || !user) {
-                return res.status(404).json({ error: 'Usuário não encontrado' });
-            }
-            
-            // Buscar estatísticas do usuário
-            db.all(`
-                SELECT 
-                    COUNT(*) as total_ratings,
-                    AVG(rating) as avg_rating,
-                    COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed_series
-                FROM ratings 
-                WHERE user_id = ?
-            `, [userId], (err, stats) => {
-                if (err) {
-                    return res.status(500).json({ error: 'Erro ao buscar estatísticas' });
-                }
-                
-                res.json({ user, stats: stats[0] });
-            });
-        }
-    );
+    try {
+        const userRes = await db.query('SELECT id, username, email, bio, avatar, created_at FROM users WHERE id = $1', [userId]);
+        const user = userRes.rows[0];
+
+        if (!user) return res.status(404).json({ error: 'Usuário não encontrado' });
+
+        const statsRes = await db.query(`
+            SELECT 
+                COUNT(*) as total_ratings,
+                AVG(rating) as avg_rating,
+                COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed_series
+            FROM ratings 
+            WHERE user_id = $1
+        `, [userId]);
+        
+        res.json({ user, stats: statsRes.rows[0] });
+    } catch (err) {
+        res.status(500).json({ error: 'Erro ao buscar perfil' });
+    }
 });
 
 // Atualizar perfil
-app.put('/api/user/profile', requireAuth, (req, res) => {
+app.put('/api/user/profile', requireAuth, async (req, res) => {
     const { bio } = req.body;
     const userId = req.session.userId;
-
-    db.run('UPDATE users SET bio = ? WHERE id = ?', [bio, userId], (err) => {
-        if (err) {
-            return res.status(500).json({ error: 'Erro ao atualizar perfil' });
-        }
+    try {
+        await db.query('UPDATE users SET bio = $1 WHERE id = $2', [bio, userId]);
         res.json({ success: true });
-    });
+    } catch (err) {
+        res.status(500).json({ error: 'Erro ao atualizar perfil' });
+    }
 });
 
 // Upload de avatar
-app.post('/api/user/avatar', requireAuth, upload.single('avatar'), (req, res) => {
-    if (!req.file) {
-        return res.status(400).json({ error: 'Nenhum arquivo enviado' });
-    }
-
+app.post('/api/user/avatar', requireAuth, upload.single('avatar'), async (req, res) => {
+    if (!req.file) return res.status(400).json({ error: 'Nenhum arquivo enviado' });
     const avatarPath = req.file.filename;
     const userId = req.session.userId;
-
-    db.run('UPDATE users SET avatar = ? WHERE id = ?', [avatarPath, userId], (err) => {
-        if (err) {
-            return res.status(500).json({ error: 'Erro ao atualizar avatar' });
-        }
+    try {
+        await db.query('UPDATE users SET avatar = $1 WHERE id = $2', [avatarPath, userId]);
         res.json({ success: true, avatar: avatarPath });
-    });
+    } catch (err) {
+        res.status(500).json({ error: 'Erro ao atualizar avatar' });
+    }
 });
 
 // ============= ROTAS DE AVALIAÇÕES =============
 
-// Adicionar/atualizar avaliação
-app.post('/api/rating', requireAuth, (req, res) => {
+// Adicionar/atualizar avaliação (Uso do ON CONFLICT para PostgreSQL)
+app.post('/api/rating', requireAuth, async (req, res) => {
     const { seriesId, rating, review, status } = req.body;
     const userId = req.session.userId;
-
-    db.run(`
-        INSERT INTO ratings (user_id, series_id, rating, review, status)
-        VALUES (?, ?, ?, ?, ?)
-        ON CONFLICT(user_id, series_id) 
-        DO UPDATE SET rating = ?, review = ?, status = ?
-    `, [userId, seriesId, rating, review, status, rating, review, status], function(err) {
-        if (err) {
-            return res.status(500).json({ error: 'Erro ao salvar avaliação' });
-        }
-        res.json({ success: true, ratingId: this.lastID });
-    });
+    try {
+        await db.query(`
+            INSERT INTO ratings (user_id, series_id, rating, review, status)
+            VALUES ($1, $2, $3, $4, $5)
+            ON CONFLICT(user_id, series_id) 
+            DO UPDATE SET rating = $3, review = $4, status = $5
+        `, [userId, seriesId, rating, review, status]);
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: 'Erro ao salvar avaliação' });
+    }
 });
 
-// Obter avaliação do usuário para uma série
-app.get('/api/rating/:seriesId', requireAuth, (req, res) => {
-    const seriesId = req.params.seriesId;
-    const userId = req.session.userId;
-
-    db.get('SELECT * FROM ratings WHERE user_id = ? AND series_id = ?', 
-        [userId, seriesId], 
-        (err, rating) => {
-            if (err) {
-                return res.status(500).json({ error: 'Erro ao buscar avaliação' });
-            }
-            res.json({ rating: rating || null });
-        }
-    );
+// Média de avaliações de uma série
+app.get('/api/series/:id/ratings', async (req, res) => {
+    const seriesId = req.params.id;
+    try {
+        const result = await db.query(`
+            SELECT 
+                u.username, u.avatar, r.rating, r.review, r.created_at,
+                (SELECT AVG(rating) FROM ratings WHERE series_id = $1) as average_global,
+                (SELECT COUNT(*) FROM ratings WHERE series_id = $1) as count_global
+            FROM ratings r
+            LEFT JOIN users u ON r.user_id = u.id
+            WHERE r.series_id = $1
+            ORDER BY r.created_at DESC
+        `, [seriesId]);
+        
+        const reviews = result.rows;
+        const average = reviews.length > 0 ? parseFloat(reviews[0].average_global).toFixed(1) : 0;
+        const count = reviews.length > 0 ? reviews[0].count_global : 0;
+        
+        res.json({ average, count, reviews });
+    } catch (err) {
+        res.status(500).json({ error: 'Erro ao buscar avaliações' });
+    }
 });
 
 // Obter todas as avaliações de um usuário
-app.get('/api/user/:id/ratings', (req, res) => {
-    const userId = req.params.id;
-    
-    db.all('SELECT * FROM ratings WHERE user_id = ? ORDER BY created_at DESC', 
-        [userId], 
-        (err, ratings) => {
-            if (err) {
-                return res.status(500).json({ error: 'Erro ao buscar avaliações' });
-            }
-            res.json({ ratings });
-        }
-    );
-});
-
-// Obter média de avaliações de uma série
-app.get('/api/series/:id/ratings', (req, res) => {
-    const seriesId = req.params.id;
-    
-    db.all(`
-        SELECT 
-            AVG(rating) as average,
-            COUNT(*) as count,
-            users.username,
-            users.avatar,
-            ratings.rating,
-            ratings.review,
-            ratings.created_at
-        FROM ratings
-        LEFT JOIN users ON ratings.user_id = users.id
-        WHERE ratings.series_id = ?
-        GROUP BY ratings.id
-        ORDER BY ratings.created_at DESC
-    `, [seriesId], (err, data) => {
-        if (err) {
-            return res.status(500).json({ error: 'Erro ao buscar avaliações' });
-        }
-        
-        const average = data.length > 0 ? data[0].average : 0;
-        const count = data.length;
-        
-        res.json({ 
-            average: average ? parseFloat(average.toFixed(1)) : 0, 
-            count,
-            reviews: data 
-        });
-    });
-});
-
-// Deletar avaliação
-app.delete('/api/rating/:seriesId', requireAuth, (req, res) => {
-    const seriesId = req.params.seriesId;
-    const userId = req.session.userId;
-
-    db.run('DELETE FROM ratings WHERE user_id = ? AND series_id = ?', 
-        [userId, seriesId], 
-        (err) => {
-            if (err) {
-                return res.status(500).json({ error: 'Erro ao deletar avaliação' });
-            }
-            res.json({ success: true });
-        }
-    );
+app.get('/api/user/:id/ratings', async (req, res) => {
+    try {
+        const result = await db.query('SELECT * FROM ratings WHERE user_id = $1 ORDER BY created_at DESC', [req.params.id]);
+        res.json({ ratings: result.rows });
+    } catch (err) {
+        res.status(500).json({ error: 'Erro ao buscar avaliações' });
+    }
 });
 
 // ============= ATIVIDADES RECENTES =============
 
-app.get('/api/recent-activity', (req, res) => {
-    db.all(`
-        SELECT 
-            ratings.*,
-            users.username,
-            users.avatar
-        FROM ratings
-        LEFT JOIN users ON ratings.user_id = users.id
-        ORDER BY ratings.created_at DESC
-        LIMIT 20
-    `, [], (err, activities) => {
-        if (err) {
-            return res.status(500).json({ error: 'Erro ao buscar atividades' });
-        }
-        res.json({ activities });
-    });
+app.get('/api/recent-activity', async (req, res) => {
+    try {
+        const result = await db.query(`
+            SELECT r.*, u.username, u.avatar
+            FROM ratings r
+            LEFT JOIN users u ON r.user_id = u.id
+            ORDER BY r.created_at DESC
+            LIMIT 20
+        `);
+        res.json({ activities: result.rows });
+    } catch (err) {
+        res.status(500).json({ error: 'Erro ao buscar atividades' });
+    }
 });
 
 // Servir o frontend
@@ -360,8 +265,6 @@ app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Iniciar servidor
 app.listen(PORT, () => {
     console.log(`🚀 Servidor rodando em http://localhost:${PORT}`);
-    console.log('📺 SeriesBox - Sua plataforma de avaliação de séries!');
 });
