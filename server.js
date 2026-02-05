@@ -10,11 +10,11 @@ const app = express();
 const PORT = process.env.PORT || 10000;
 
 // Configuração do Cloudinary
-// DICA: Use process.env.CLOUDINARY_URL para não expor sua senha no GitHub
+// Ele tentará ler a variável do Render (process.env.CLOUDINARY_URL)
+// Se não existir, usará a string de fallback corrigida (sem o prefixo "CLOUDINARY_URL=")
 cloudinary.config({ 
-  cloudinary_url: process.env.CLOUDINARY_URL || 'CLOUDINARY_URL=cloudinary://956751932938519:EMAZtnyNZzIKBR5sA8rZasxcXZk@ddwwhhika' 
+  cloudinary_url: process.env.CLOUDINARY_URL || 'cloudinary://956751932938519:EMAZtnyNZzIKBR5sA8rZasxcXZk@ddwwhhika' 
 });
-
 
 // Configuração do Banco de Dados
 const db = new Pool({
