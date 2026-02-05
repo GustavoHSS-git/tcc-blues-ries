@@ -17,7 +17,6 @@ async function loadUserProfile(userId) {
     try {
         const userData = await API.getUser(userId);
         
-        // Proteção contra erro de JSON: verifica se userData existe
         if (!userData || !userData.user) {
             container.innerHTML = '<p class="placeholder-text">Usuário não encontrado</p>';
             return;
@@ -27,7 +26,11 @@ async function loadUserProfile(userId) {
         const stats = userData.stats || { total_ratings: 0, completed_series: 0, avg_rating: 0 };
         const isOwnProfile = currentUser && currentUser.id === parseInt(userId);
         
-        // Avatar section
+        // --- LÓGICA CLOUDINARY AQUI ---
+        const avatarUrl = (user.avatar && user.avatar.startsWith('http')) 
+            ? user.avatar 
+            : `/uploads/${user.avatar || 'default-avatar.png'}`;
+        
         let avatarSection = '';
         if (isOwnProfile) {
             avatarSection = `
@@ -40,26 +43,20 @@ async function loadUserProfile(userId) {
             `;
         }
         
-        // Bio section
-        let bioSection = '';
-        if (isOwnProfile) {
-            bioSection = `
-                <div style="margin-top: 1rem;">
-                    <textarea id="bioEdit" placeholder="Escreva algo sobre você..." 
-                              style="width: 100%; min-height: 80px; padding: 0.8rem; background: var(--bg-dark); 
-                              border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); 
-                              font-family: inherit; resize: vertical;">${user.bio || ''}</textarea>
-                    <button class="btn btn-primary" style="margin-top: 0.5rem;" onclick="saveBio()">Salvar Bio</button>
-                </div>
-            `;
-        } else {
-            bioSection = `<p class="profile-bio">${user.bio || 'Sem bio disponível.'}</p>`;
-        }
+        let bioSection = isOwnProfile ? `
+            <div style="margin-top: 1rem;">
+                <textarea id="bioEdit" placeholder="Escreva algo sobre você..." 
+                          style="width: 100%; min-height: 80px; padding: 0.8rem; background: var(--bg-dark); 
+                          border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); 
+                          font-family: inherit; resize: vertical;">${user.bio || ''}</textarea>
+                <button class="btn btn-primary" style="margin-top: 0.5rem;" onclick="saveBio()">Salvar Bio</button>
+            </div>
+        ` : `<p class="profile-bio">${user.bio || 'Sem bio disponível.'}</p>`;
         
         container.innerHTML = `
             <div class="profile-header">
                 <div class="profile-avatar-container" style="position: relative;">
-                    <img src="/uploads/${user.avatar || 'default-avatar.png'}" 
+                    <img src="${avatarUrl}" 
                          alt="${user.username}" class="profile-avatar"
                          onerror="this.src='/uploads/default-avatar.png'">
                     ${avatarSection}
@@ -91,7 +88,6 @@ async function loadUserProfile(userId) {
             </div>
         `;
         
-        // Carregar séries avaliadas de forma independente para não travar o perfil
         loadUserRatingsList(userId);
 
     } catch (error) {
@@ -179,9 +175,15 @@ async function handleAvatarUpload(event) {
 async function saveBio() {
     const bio = document.getElementById('bioEdit').value;
     try {
-        const data = await API.updateProfile(bio);
+        // Agora usamos o método PUT que criamos no servidor
+        const response = await fetch('/api/user/update', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ bio })
+        });
+        const data = await response.json();
         if (data.success) {
-            alert('Bio atualizada!');
+            alert('Bio atualizada com sucesso');
         }
     } catch (error) {
         alert('Erro ao salvar bio');

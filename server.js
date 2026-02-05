@@ -5,9 +5,17 @@ const multer = require('multer');
 const { Pool } = require('pg');
 const path = require('path');
 const fs = require('fs');
+const cloudinary = require('cloudinary').v2; // Adicionado Cloudinary
 
 const app = express();
 const PORT = process.env.PORT || 10000;
+
+// Configuração do Cloudinary (Substitua pelos seus dados do Dashboard)
+cloudinary.config({ 
+  cloud_name: 'Gustavo',
+  api_key: '956751932938519', 
+  api_secret: 'EMAZtnyNZzIKBR5sA8rZasxcXZk' 
+});
 
 // Configuração do Banco de Dados
 const db = new Pool({
@@ -34,15 +42,15 @@ app.use(session({
     cookie: { maxAge: 24 * 60 * 60 * 1000 }
 }));
 
-// Configuração de Upload
+// Configuração de Upload Temporário (Vai para o Render e depois para o Cloudinary)
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        const uploadDir = './public/uploads';
+        const uploadDir = path.join(__dirname, 'public', 'uploads');
         if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
         cb(null, uploadDir);
     },
     filename: (req, file, cb) => {
-        cb(null, Date.now() + '-' + Math.round(Math.random() * 1E9) + path.extname(file.originalname));
+        cb(null, Date.now() + '-' + file.originalname);
     }
 });
 const upload = multer({ storage });
@@ -96,15 +104,64 @@ app.get('/api/check-session', async (req, res) => {
     }
 });
 
+// ============= ROTAS DE PERFIL E UPLOAD =============
+
+// ROTA DE UPLOAD PARA CLOUDINARY (Substitui a local)
+app.post('/api/user/avatar', requireAuth, upload.single('avatar'), async (req, res) => {
+    try {
+        if (!req.file) return res.status(400).json({ error: 'Nenhum arquivo enviado' });
+
+        const result = await cloudinary.uploader.upload(req.file.path, {
+            folder: 'seriesbox_avatars',
+            transformation: [{ width: 250, height: 250, crop: 'fill' }]
+        });
+
+        const imageUrl = result.secure_url;
+        await db.query('UPDATE users SET avatar = $1 WHERE id = $2', [imageUrl, req.session.userId]);
+
+        if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+
+        res.json({ success: true, avatar: imageUrl });
+    } catch (error) {
+        console.error("Erro no Cloudinary:", error);
+        res.status(500).json({ error: 'Erro ao subir imagem' });
+    }
+});
+
+// ROTA PARA ATUALIZAR BIO
+app.put('/api/user/update', requireAuth, async (req, res) => {
+    const { bio } = req.body;
+    try {
+        await db.query('UPDATE users SET bio = $1 WHERE id = $2', [bio, req.session.userId]);
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: 'Erro ao atualizar bio' });
+    }
+});
+
+app.get('/api/user/:id', async (req, res) => {
+    const userId = req.params.id;
+    try {
+        const userRes = await db.query('SELECT id, username, email, bio, avatar, created_at FROM users WHERE id = $1', [userId]);
+        const user = userRes.rows[0];
+        if (!user) return res.status(404).json({ error: 'Usuário não encontrado' });
+
+        const statsRes = await db.query(`
+            SELECT COUNT(*)::INT as total_ratings, COALESCE(AVG(rating), 0)::FLOAT as avg_rating,
+            COUNT(CASE WHEN status = 'completed' THEN 1 END)::INT as completed_series
+            FROM ratings WHERE user_id = $1`, [userId]);
+        
+        res.json({ user, stats: statsRes.rows[0] });
+    } catch (err) {
+        res.status(500).json({ error: 'Erro ao buscar perfil' });
+    }
+});
+
 // ============= ROTAS DE SÉRIES E AVALIAÇÕES =============
 
-// NOVA ROTA: Buscar avaliação específica (Necessária para o series.js não quebrar)
 app.get('/api/rating/:seriesId', requireAuth, async (req, res) => {
     try {
-        const result = await db.query(
-            'SELECT * FROM ratings WHERE user_id = $1 AND series_id = $2',
-            [req.session.userId, req.params.seriesId]
-        );
+        const result = await db.query('SELECT * FROM ratings WHERE user_id = $1 AND series_id = $2', [req.session.userId, req.params.seriesId]);
         res.json({ rating: result.rows[0] || null });
     } catch (err) {
         res.status(500).json({ error: 'Erro ao buscar avaliação' });
@@ -114,17 +171,8 @@ app.get('/api/rating/:seriesId', requireAuth, async (req, res) => {
 app.get('/api/series/:id/ratings', async (req, res) => {
     const seriesId = req.params.id;
     try {
-        // Busca as reviews e calcula a média separadamente para evitar erros de tipos no Postgres
-        const reviews = await db.query(`
-            SELECT r.*, u.username, u.avatar 
-            FROM ratings r 
-            JOIN users u ON r.user_id = u.id 
-            WHERE r.series_id = $1 ORDER BY r.created_at DESC`, [seriesId]);
-
-        const stats = await db.query(`
-            SELECT AVG(rating)::FLOAT as average, COUNT(*)::INT as count 
-            FROM ratings WHERE series_id = $1`, [seriesId]);
-
+        const reviews = await db.query(`SELECT r.*, u.username, u.avatar FROM ratings r JOIN users u ON r.user_id = u.id WHERE r.series_id = $1 ORDER BY r.created_at DESC`, [seriesId]);
+        const stats = await db.query(`SELECT AVG(rating)::FLOAT as average, COUNT(*)::INT as count FROM ratings WHERE series_id = $1`, [seriesId]);
         res.json({
             average: stats.rows[0].average ? stats.rows[0].average.toFixed(1) : "0.0",
             count: stats.rows[0].count || 0,
@@ -139,68 +187,15 @@ app.post('/api/rating', requireAuth, async (req, res) => {
     const { seriesId, rating, review, status } = req.body;
     try {
         await db.query(`
-            INSERT INTO ratings (user_id, series_id, rating, review, status)
-            VALUES ($1, $2, $3, $4, $5)
-            ON CONFLICT (user_id, series_id) 
-            DO UPDATE SET rating = EXCLUDED.rating, review = EXCLUDED.review, status = EXCLUDED.status`,
-            [req.session.userId, seriesId, rating, review, status]
-        );
+            INSERT INTO ratings (user_id, series_id, rating, review, status) VALUES ($1, $2, $3, $4, $5)
+            ON CONFLICT (user_id, series_id) DO UPDATE SET rating = EXCLUDED.rating, review = EXCLUDED.review, status = EXCLUDED.status`,
+            [req.session.userId, seriesId, rating, review, status]);
         res.json({ success: true });
     } catch (err) {
         res.status(500).json({ error: 'Erro ao salvar avaliação' });
     }
 });
 
-// ============= ATIVIDADES E PERFIL =============
-
-app.get('/api/recent-activity', async (req, res) => {
-    try {
-        const result = await db.query(`
-            SELECT r.*, u.username, u.avatar 
-            FROM ratings r 
-            JOIN users u ON r.user_id = u.id 
-            ORDER BY r.created_at DESC LIMIT 15`);
-        res.json({ activities: result.rows });
-    } catch (err) {
-        res.json({ activities: [] });
-    }
-});
-
-app.get('/api/user/:id', async (req, res) => {
-    const userId = req.params.id;
-    try {
-        // 1. Busca os dados básicos do usuário
-        const userRes = await db.query(
-            'SELECT id, username, email, bio, avatar, created_at FROM users WHERE id = $1', 
-            [userId]
-        );
-        const user = userRes.rows[0];
-
-        if (!user) {
-            return res.status(404).json({ error: 'Usuário não encontrado' });
-        }
-
-        // 2. Busca estatísticas tratando valores nulos (importante para o Postgres)
-        const statsRes = await db.query(`
-            SELECT 
-                COUNT(*)::INT as total_ratings,
-                COALESCE(AVG(rating), 0)::FLOAT as avg_rating,
-                COUNT(CASE WHEN status = 'completed' THEN 1 END)::INT as completed_series
-            FROM ratings 
-            WHERE user_id = $1
-        `, [userId]);
-        
-        // Enviamos sempre um objeto stats, mesmo que zerado
-        res.json({ 
-            user, 
-            stats: statsRes.rows[0] || { total_ratings: 0, avg_rating: 0, completed_series: 0 } 
-        });
-
-    } catch (err) {
-        console.error("ERRO NO PERFIL:", err);
-        res.status(500).json({ error: 'Erro interno ao buscar perfil' });
-    }
-});
 app.post('/api/logout', (req, res) => {
     req.session.destroy();
     res.json({ success: true });

@@ -22,7 +22,20 @@ function updateUIForLoggedInUser() {
     document.getElementById('headerUsername').textContent = currentUser.username;
     
     if (currentUser.avatar) {
-        document.getElementById('headerAvatar').src = `/uploads/${currentUser.avatar}`;
+        const avatarElement = document.getElementById('headerAvatar');
+        
+        // Verifica se é link do Cloudinary (http) ou arquivo local
+        const avatarSrc = currentUser.avatar.startsWith('http') 
+            ? currentUser.avatar 
+            : `/uploads/${currentUser.avatar}`;
+            
+        avatarElement.src = avatarSrc;
+
+        // Se a imagem não carregar por algum motivo, põe a padrão
+        avatarElement.onerror = function() { 
+            this.src = '/uploads/default-avatar.png';
+            this.onerror = null;
+        };
     }
 }
 
@@ -90,16 +103,18 @@ async function handleLogin(event) {
     try {
         const data = await API.login(email, password);
         
-        if (data.success) {
+        // Dentro do handleLogin(event)
+            if (data.success) {
             currentUser = {
-                id: data.userId,
-                username: data.username,
-                avatar: data.avatar
-            };
-            
+            id: data.userId,
+            username: data.username,
+            avatar: data.avatar // Garanta que esta linha exista!
+        };
+    
             closeModal('loginModal');
             updateUIForLoggedInUser();
-            
+    
+
             // Recarregar página inicial
             if (window.location.hash === '#home' || !window.location.hash) {
                 loadHomePage();

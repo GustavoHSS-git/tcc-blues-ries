@@ -72,7 +72,6 @@ const TMDB_API = {
     }
 };
 
-// Funções para fazer requisições à API local
 const API = {
     // Autenticação
     register: async (username, email, password) => {
@@ -107,14 +106,14 @@ const API = {
 
     // Usuário
     getUser: async (userId) => {
-    const response = await fetch(`${APP_CONFIG.API_BASE}/user/${userId}`);
-    // Se a resposta não for OK (status 400, 500, etc), não tentamos dar .json() direto sem checar
-    if (!response.ok) return null; 
-    return await response.json();
-},
+        const response = await fetch(`${APP_CONFIG.API_BASE}/user/${userId}`);
+        if (!response.ok) return null; 
+        return await response.json();
+    },
 
+    // AJUSTADO: Rota alterada para /user/update para bater com o server.js
     updateProfile: async (bio) => {
-        const response = await fetch(`${APP_CONFIG.API_BASE}/user/profile`, {
+        const response = await fetch(`${APP_CONFIG.API_BASE}/user/update`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ bio })
@@ -122,11 +121,14 @@ const API = {
         return await response.json();
     },
 
+    // UPLOAD DE AVATAR (Cloudinary)
     uploadAvatar: async (file) => {
         const formData = new FormData();
-        formData.append('avatar', file);
+        formData.append('avatar', file); // 'avatar' deve ser o mesmo nome no multer
+        
         const response = await fetch(`${APP_CONFIG.API_BASE}/user/avatar`, {
             method: 'POST',
+            // Importante: Não definir Content-Type aqui para arquivos
             body: formData
         });
         return await response.json();
@@ -154,13 +156,6 @@ const API = {
 
     getSeriesRatings: async (seriesId) => {
         const response = await fetch(`${APP_CONFIG.API_BASE}/series/${seriesId}/ratings`);
-        return await response.json();
-    },
-
-    deleteRating: async (seriesId) => {
-        const response = await fetch(`${APP_CONFIG.API_BASE}/rating/${seriesId}`, {
-            method: 'DELETE'
-        });
         return await response.json();
     },
 
