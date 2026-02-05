@@ -9,10 +9,11 @@ const fs = require('fs');
 const app = express();
 const PORT = process.env.PORT || 10000;
 
-// Configuração do banco de dados (Supabase/PostgreSQL)
 const db = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false }
+    ssl: { rejectUnauthorized: false },
+    connectionTimeoutMillis: 5000, // Desiste após 5 segundos se a rede travar
+    idleTimeoutMillis: 30000
 });
 
 // Teste de conexão imediata
