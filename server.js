@@ -12,13 +12,16 @@ const PORT = process.env.PORT || 10000;
 // Configuração do banco de dados (Supabase/PostgreSQL)
 const db = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: {
-        rejectUnauthorized: false // Obrigatório para o Render conectar ao Supabase
-    }
+    ssl: { rejectUnauthorized: false }
 });
 
-db.on('connect', () => {
-    console.log('🚀 Conectado ao banco de dados PostgreSQL no Supabase');
+// Teste de conexão imediata
+db.query('SELECT NOW()', (err, res) => {
+    if (err) {
+        console.error('❌ Erro ao conectar ao banco de dados:', err.message);
+    } else {
+        console.log('🚀 Conectado ao banco de dados PostgreSQL no Supabase');
+    }
 });
 
 // Configuração de upload de imagens
