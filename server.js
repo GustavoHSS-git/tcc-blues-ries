@@ -167,19 +167,40 @@ app.get('/api/recent-activity', async (req, res) => {
 });
 
 app.get('/api/user/:id', async (req, res) => {
+    const userId = req.params.id;
     try {
-        const user = await db.query('SELECT id, username, bio, avatar, created_at FROM users WHERE id = $1', [req.params.id]);
-        const stats = await db.query(`
-            SELECT COUNT(*)::INT as total_ratings, AVG(rating)::FLOAT as avg_rating 
-            FROM ratings WHERE user_id = $1`, [req.params.id]);
+        // 1. Busca os dados básicos do usuário
+        const userRes = await db.query(
+            'SELECT id, username, email, bio, avatar, created_at FROM users WHERE id = $1', 
+            [userId]
+        );
+        const user = userRes.rows[0];
+
+        if (!user) {
+            return res.status(404).json({ error: 'Usuário não encontrado' });
+        }
+
+        // 2. Busca estatísticas tratando valores nulos (importante para o Postgres)
+        const statsRes = await db.query(`
+            SELECT 
+                COUNT(*)::INT as total_ratings,
+                COALESCE(AVG(rating), 0)::FLOAT as avg_rating,
+                COUNT(CASE WHEN status = 'completed' THEN 1 END)::INT as completed_series
+            FROM ratings 
+            WHERE user_id = $1
+        `, [userId]);
         
-        if (!user.rows[0]) return res.status(404).json({ error: 'Usuário não encontrado' });
-        res.json({ user: user.rows[0], stats: stats.rows[0] });
+        // Enviamos sempre um objeto stats, mesmo que zerado
+        res.json({ 
+            user, 
+            stats: statsRes.rows[0] || { total_ratings: 0, avg_rating: 0, completed_series: 0 } 
+        });
+
     } catch (err) {
-        res.status(500).json({ error: 'Erro no perfil' });
+        console.error("ERRO NO PERFIL:", err);
+        res.status(500).json({ error: 'Erro interno ao buscar perfil' });
     }
 });
-
 app.post('/api/logout', (req, res) => {
     req.session.destroy();
     res.json({ success: true });

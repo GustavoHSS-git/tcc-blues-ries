@@ -107,9 +107,11 @@ const API = {
 
     // Usuário
     getUser: async (userId) => {
-        const response = await fetch(`${APP_CONFIG.API_BASE}/user/${userId}`);
-        return await response.json();
-    },
+    const response = await fetch(`${APP_CONFIG.API_BASE}/user/${userId}`);
+    // Se a resposta não for OK (status 400, 500, etc), não tentamos dar .json() direto sem checar
+    if (!response.ok) return null; 
+    return await response.json();
+},
 
     updateProfile: async (bio) => {
         const response = await fetch(`${APP_CONFIG.API_BASE}/user/profile`, {
