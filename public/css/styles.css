@@ -304,32 +304,24 @@ body {
     gap: 2rem;
 }
 
-/* --- GRID INTELIGENTE (Substitua o seu .series-grid) --- */
-.series-grid {
-    display: grid;
-    /* auto-fill: preenche o espaço; minmax: nunca menor que 160px, nunca maior que 1 parte do total */
-    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); 
-    gap: 1.5rem;
-    width: 100%;
-    padding: 1rem 0;
-}
-
-/* --- AJUSTE NO CARD (Para não quebrar o layout) --- */
+/* Series Card */
 .series-card {
     background: var(--bg-card);
     border-radius: 12px;
     overflow: hidden;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94); /* Transição mais suave */
+    transition: all 0.3s;
     position: relative;
-    display: flex;
-    flex-direction: column;
-    height: 100%;
+}
+
+.series-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 10px 30px rgba(0, 212, 255, 0.3);
 }
 
 .series-card-poster {
     width: 100%;
-    aspect-ratio: 2/3; /* Mantém a proporção de cinema em qualquer tela */
+    aspect-ratio: 2/3;
     object-fit: cover;
     background: var(--bg-hover);
 }
@@ -383,45 +375,55 @@ body {
 }
 
 /* Series Detail */
-.series-detail {
+/* Contêiner principal dos detalhes */
+#seriesDetail {
     position: relative;
-}
-
-.series-backdrop {
     width: 100%;
-    height: 400px;
-    object-fit: cover;
-    position: relative;
+    min-height: 100vh;
+    color: white;
+    overflow-x: hidden;
 }
 
-.series-backdrop::after {
-    content: '';
+/* A imagem de fundo (Backdrop) */
+.backdrop-container {
     position: absolute;
     top: 0;
     left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(to bottom, transparent, var(--bg-dark));
+    width: 100%;
+    height: 600px; /* Altura do topo */
+    z-index: 0;
+    overflow: hidden;
 }
 
+.backdrop-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.3; /* Deixa a imagem suave para o texto aparecer */
+    mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
+}
+
+/* O conteúdo que fica POR CIMA da imagem */
 .series-detail-content {
-    max-width: 1400px;
-    margin: -100px auto 0;
-    padding: 0 2rem 3rem;
     position: relative;
-    z-index: 10;
+    z-index: 10; /* Garante que o texto fique na frente */
+    padding: 100px 5% 40px; /* Espaço para não bater no topo */
+    max-width: 1200px;
+    margin: 0 auto;
 }
 
 .series-detail-header {
     display: flex;
-    gap: 2rem;
-    margin-bottom: 2rem;
+    gap: 30px;
+    align-items: flex-end; /* Alinha o texto com a base do poster */
+    margin-bottom: 40px;
 }
 
 .series-detail-poster {
-    width: 300px;
-    border-radius: 12px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    width: 250px;
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
 }
 
 .series-detail-info {
@@ -788,93 +790,67 @@ body {
     }
 }
 
-/* --- AJUSTES DE RESPONSIVIDADE OTIMIZADOS --- */
-
-/* 1. Telas Médias (Tablets) */
-@media (max-width: 992px) {
-    .container {
-        padding: 0 1.5rem;
-    }
-    
-    .series-detail-title {
-        font-size: 2.2rem;
-    }
-}
-
-/* 2. Dispositivos Móveis (Celulares e Tablets Pequenos) */
+/* Responsive */
 @media (max-width: 768px) {
-    .header {
-        padding: 0.8rem 0;
-    }
-
     .header-content {
-        flex-direction: row; /* Mantém logo e avatar lado a lado */
-        justify-content: space-between;
-    }
-
-    /* Transforma a Navegação em uma barra fixa inferior (Estilo App) */
-    .nav {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        background: var(--bg-card);
-        padding: 0.8rem;
-        justify-content: space-around; /* Ícones bem distribuídos */
-        border-top: 1px solid var(--border-color);
-        z-index: 1000;
-        gap: 0;
-    }
-
-    .nav-link.active::after {
-        top: -8px; /* Move a linha indicadora para cima da palavra no mobile */
-        bottom: auto;
-    }
-
-    .main-content {
-        margin-bottom: 70px; /* Dá espaço para não esconder conteúdo atrás da nav fixa */
-    }
-
-    /* Detalhes da Série no Mobile */
-    .series-detail-header {
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-        gap: 1.5rem;
-    }
-
-    .series-detail-poster {
-        width: 180px;
-        margin-top: -60px; /* Sobe o poster sobre o gradiente */
-    }
-
-    .series-detail-meta {
-        justify-content: center;
         flex-wrap: wrap;
-        gap: 1rem;
-    }
-}
-
-/* 3. Celulares Muito Pequenos */
-@media (max-width: 480px) {
-    .series-grid {
-        /* Garante exatamente 2 cards por linha, sem erro */
-        grid-template-columns: repeat(2, 1fr);
-        gap: 12px;
     }
 
-    .hero {
-        margin-top: 100px;
-        padding: 2rem 1rem;
+    .nav {
+        order: 3;
+        width: 100%;
+        justify-content: center;
+        margin-top: 1rem;
     }
 
     .hero h2 {
-        font-size: 1.6rem;
+        font-size: 1.8rem;
     }
 
-    .btn {
-        padding: 0.5rem 1rem;
-        font-size: 0.85rem;
+    .series-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 1rem;
+    }
+
+    .series-detail-header {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .series-detail-poster {
+        width: 200px;
+    }
+
+    .series-detail-title {
+        font-size: 2rem;
+        text-align: center;
+    }
+
+    .profile-header {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .profile-stats {
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        padding: 0 1rem;
+    }
+
+    .series-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .hero {
+        padding: 2rem 1rem;
+    }
+
+    .search-bar {
+        flex-direction: column;
     }
 }
 
