@@ -2,7 +2,7 @@
 
 // Navegação entre páginas
 function showPage(pageId) {
-    // Remover classe active de todas as páginas
+    window.scrollTo(0, 0); // <-- Reseta o scroll ao mudar de página
     document.querySelectorAll('.page').forEach(page => {
         page.classList.remove('active');
     });
@@ -24,10 +24,13 @@ function loadHomePage() {
     showPage('homePage');
     document.querySelector('.nav-link[href="#home"]').classList.add('active');
     
-    // Carregar conteúdo
+    // Carregar conteúdo da Nuvem (TMDB)
+    loadNewReleasesSection(); 
+    loadAnimeSection();       
     loadPopularSeries();
     loadTopRatedSeries();
-    loadNewSeries();
+    
+    // Carregar conteúdo do seu Banco (Atividade dos usuários)
     loadRecentActivity();
 }
 

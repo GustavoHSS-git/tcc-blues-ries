@@ -42,6 +42,27 @@ async function loadPopularSeries() {
     }
 }
 
+// Carregar Tudo (Animes, Novidades e Populares)
+async function fetchAndDisplaySeries() {
+    try {
+        const allSeries = await api.getSeries(); 
+
+        // 1. Filtra e exibe os Animes
+        const animes = allSeries.filter(s => s.category?.toLowerCase() === 'anime');
+        renderSeries(animes, 'animeSeries');
+
+        // 2. Filtra e exibe as Novidades (ex: adicionados recentemente)
+        const news = [...allSeries].reverse().slice(0, 10);
+        renderSeries(news, 'newSeries');
+
+        // 3. Exibe as Populares (lista completa)
+        renderSeries(allSeries, 'popularSeries');
+
+    } catch (error) {
+        console.error("Erro ao carregar séries:", error);
+    }
+}
+
 // Carregar top séries
 async function loadTopRatedSeries() {
     const container = document.getElementById('topRatedSeries');
@@ -338,3 +359,36 @@ function searchSeries(event) {
 // Garante que as funções estejam disponíveis globalmente para o HTML (onkeyup)
 window.heroSearchSeries = heroSearchSeries;
 window.searchSeries = searchSeries;
+
+// --- CARREGAR ANIMES ---
+async function loadAnimeSection() {
+    const container = document.getElementById('animeSeries'); // Alterado para animeSeries
+    if (!container) return;
+
+    try {
+        const data = await TMDB_API.getAnimes();
+        container.innerHTML = ''; 
+        
+        data.results.forEach(series => {
+            container.appendChild(renderSeriesCard(series));
+        });
+    } catch (error) {
+        container.innerHTML = '<p>Erro ao carregar animes</p>';
+    }
+}
+
+// --- CARREGAR NOVIDADES ---
+async function loadNewReleasesSection() {
+    const container = document.getElementById('newSeries'); // Mantido como newSeries
+    if (!container) return;
+
+    try {
+        const data = await TMDB_API.getRecentReleases();
+        container.innerHTML = '';
+        data.results.forEach(series => {
+            container.appendChild(renderSeriesCard(series));
+        });
+    } catch (error) {
+        console.error("Erro ao carregar novidades:", error);
+    }
+}

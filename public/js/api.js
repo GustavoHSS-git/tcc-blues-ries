@@ -167,6 +167,43 @@ const API = {
         return await response.json();
     }
 
+    // Buscar Animes (Animação + Keyword Anime)
+        ,getAnimes: async () => {
+        try {
+            const response = await fetch(
+                `${TMDB_CONFIG.BASE_URL}/discover/tv?api_key=${TMDB_CONFIG.API_KEY}&language=pt-BR&with_genres=16&with_keywords=210024&sort_by=popularity.desc`
+            );
+            return await response.json();
+        } catch (error) {
+            console.error('Erro ao buscar animes:', error);
+            return { results: [] };
+        }
+    }, // <-- Certifique-se de que esta vírgula existe se houver mais funções abaixo
+
+    // Buscar por Gênero específico (Ex: Ação = 10759)
+    getSeriesByGenre: async (genreId) => {
+        try {
+            const response = await fetch(
+                `${TMDB_CONFIG.BASE_URL}/discover/tv?api_key=${TMDB_CONFIG.API_KEY}&language=pt-BR&with_genres=${genreId}&sort_by=popularity.desc`
+            );
+            return await response.json();
+        } catch (error) {
+            console.error('Erro ao buscar gênero:', error);
+            return { results: [] };
+        }
+    },
     
+    // Buscar Novidades (Séries que estrearam recentemente)
+    getRecentReleases: async () => {
+        try {
+            const response = await fetch(
+                `${TMDB_CONFIG.BASE_URL}/tv/on_the_air?api_key=${TMDB_CONFIG.API_KEY}&language=pt-BR&page=1`
+            );
+            return await response.json();
+        } catch (error) {
+            console.error('Erro ao buscar novidades:', error);
+            return { results: [] };
+        }
+    }
 };
 
