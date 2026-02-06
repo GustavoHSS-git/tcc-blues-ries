@@ -1,4 +1,4 @@
-// Gerenciamento de séries e avaliações - Versão Corrigida para PostgreSQL/Cloudinary
+// Gerenciamento de séries e avaliações - Versão Final Corrigida
 
 // Renderizar card de série (Padrão TMDB)
 function renderSeriesCard(series) {
@@ -190,8 +190,11 @@ async function showSeriesDetail(seriesId) {
                     <div class="reviews-list">
                         ${ratingsData.reviews.map(rev => `
                             <div class="review-item">
-                                <strong>${rev.username}</strong> - ⭐ ${rev.rating}
-                                <p>${rev.review || ''}</p>
+                                <img src="${rev.avatar && rev.avatar.startsWith('http') ?HJrev.avatar : '/uploads/' + (rev.avatar || 'default-avatar.png')}" class="review-avatar" onerror="this.src='/uploads/default-avatar.png'">
+                                <div class="review-content">
+                                    <strong>${rev.username}</strong> - ⭐ ${rev.rating}
+                                    <p>${rev.review || ''}</p>
+                                </div>
                             </div>
                         `).join('') || '<p>Ainda não há avaliações.</p>'}
                     </div>
@@ -229,7 +232,7 @@ async function submitRating(event, seriesId) {
     } catch (error) { alert('Erro ao salvar.'); }
 }
 
-// CARREGAR ATIVIDADE RECENTE (CORRIGIDO PARA POSTGRES + CLOUDINARY)
+// CARREGAR ATIVIDADE RECENTE (CORRIGIDO PARA OTIMIZAÇÃO E POSTGRES)
 async function loadRecentActivity() {
     const container = document.getElementById('activityFeed'); 
     if (!container) return;
@@ -247,40 +250,84 @@ async function loadRecentActivity() {
         
         container.innerHTML = '';
         
-        for (const activity of activities) {
+        // OTIMIZAÇÃO: Busca todas as informações do TMDB em paralelo (Promise.all)
+        // Isso evita que o site trave carregando um por um
+        const activityPromises = activities.map(async (activity) => {
             try {
                 const series = await TMDB_API.getSeriesDetails(activity.series_id);
                 if (series) {
-                    const activityItem = document.createElement('div');
-                    activityItem.className = 'activity-item';
-                    activityItem.onclick = () => showSeriesDetail(activity.series_id);
-                    
-                    const rating = Math.round(activity.rating || 0);
-                    // Suporte para URL Cloudinary ou Local
-                    const userAvatar = activity.avatar && activity.avatar.startsWith('http') 
-                        ? activity.avatar 
-                        : `/uploads/${activity.avatar || 'default-avatar.png'}`;
-                    
-                    activityItem.innerHTML = `
-                        <img src="${userAvatar}" class="activity-avatar" onerror="this.src='/uploads/default-avatar.png'">
-                        <div class="activity-content">
-                            <div>
-                                <span class="activity-username">${activity.username}</span> avaliou 
-                                <strong>${series.name}</strong>
-                            </div>
-                            <div class="activity-text">
-                                <span style="color: #ffc107;">${'★'.repeat(rating)}${'☆'.repeat(5 - rating)}</span>
-                                ${activity.review ? ` - "${activity.review.substring(0, 60)}..."` : ''}
-                            </div>
-                            <div class="activity-date">${new Date(activity.created_at).toLocaleDateString('pt-BR')}</div>
-                        </div>
-                    `;
-                    container.appendChild(activityItem);
+                    return { activity, series };
                 }
-            } catch (e) { console.error("Erro no TMDB:", e); }
-        }
+            } catch (e) {
+                console.error("Erro no TMDB para série " + activity.series_id, e);
+            }
+            return null;
+        });
+
+        const results = await Promise.all(activityPromises);
+        
+        // Renderiza apenas os resultados válidos
+        results.forEach(item => {
+            if(item) {
+                const { activity, series } = item;
+                const activityItem = document.createElement('div');
+                activityItem.className = 'activity-item';
+                activityItem.onclick = () => showSeriesDetail(activity.series_id);
+                
+                const rating = Math.round(activity.rating || 0);
+                // Suporte para URL Cloudinary ou Local
+                const userAvatar = activity.avatar && activity.avatar.startsWith('http') 
+                    ? activity.avatar 
+                    : `/uploads/${activity.avatar || 'default-avatar.png'}`;
+                
+                activityItem.innerHTML = `
+                    <img src="${userAvatar}" class="activity-avatar" onerror="this.src='/uploads/default-avatar.png'">
+                    <div class="activity-content">
+                        <div>
+                            <span class="activity-username">${activity.username}</span> avaliou 
+                            <strong>${series.name}</strong>
+                        </div>
+                        <div class="activity-text">
+                            <span style="color: #ffc107;">${'★'.repeat(rating)}${'☆'.repeat(5 - rating)}</span>
+                            ${activity.review ? ` - "${activity.review.substring(0, 60)}..."` : ''}
+                        </div>
+                        <div class="activity-date">${new Date(activity.created_at).toLocaleDateString('pt-BR')}</div>
+                    </div>
+                `;
+                container.appendChild(activityItem);
+            }
+        });
+
     } catch (error) {
         console.error('Erro na atividade:', error);
         container.innerHTML = '<p class="placeholder-text">Erro ao carregar atividades</p>';
     }
 }
+
+// Função para busca na Hero Section (Página Inicial)
+function heroSearchSeries(event) {
+    if (event.key === 'Enter') {
+        const query = event.target.value;
+        if (query) {
+            window.location.hash = '#search';
+            setTimeout(() => {
+                const searchInput = document.getElementById('searchInput');
+                if(searchInput) {
+                    searchInput.value = query;
+                    performSearch();
+                }
+            }, 100);
+        }
+    }
+}
+
+// Função para busca na Página de Busca
+function searchSeries(event) {
+    if (event.key === 'Enter') {
+        performSearch();
+    }
+}
+
+// Garante que as funções estejam disponíveis globalmente para o HTML (onkeyup)
+window.heroSearchSeries = heroSearchSeries;
+window.searchSeries = searchSeries;
