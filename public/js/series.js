@@ -1,4 +1,4 @@
-// Gerenciamento de séries e avaliações - Versão Corrigida Final
+// Gerenciamento de séries e avaliações - Versão Final Corrigida
 
 // Renderizar card de série (Padrão TMDB)
 function renderSeriesCard(series) {
@@ -106,7 +106,8 @@ async function performSearch() {
     }
 }
 
-// Mostrar detalhes da série - CORRIGIDO
+
+// Mostrar detalhes da série 
 async function showSeriesDetail(seriesId) {
     window.location.hash = `#series/${seriesId}`;
     const container = document.getElementById('seriesDetail');
@@ -156,73 +157,59 @@ async function showSeriesDetail(seriesId) {
                             </div>
                             <div class="form-group">
                                 <label>Review</label>
-                                <textarea name="review" placeholder="O que você achou dessa série?">${currentReview}</textarea>
+                                <textarea name="review">${currentReview}</textarea>
                             </div>
-                            <button type="submit" class="btn btn-primary btn-block">Salvar Avaliação</button>
+                            <button type="submit" class="btn btn-primary btn-block">Salvar</button>
                         </form>
                     </div>
                 `;
-            } catch (err) { 
-                console.error('Erro ao carregar avaliação do usuário:', err); 
-            }
+            } catch (err) { console.error(err); }
         }
 
+        // --- TRATAMENTO DA MÉDIA 
         const ratingsData = await API.getSeriesRatings(seriesId);
         
-        // RENDERIZAÇÃO CORRIGIDA COM BACKDROP CONTAINER
+        // Transformamos em número primeiro, se for nulo vira 0
+        const communityAvgRaw = ratingsData && ratingsData.average ? parseFloat(ratingsData.average) : 0;
+        // Agora o toFixed(1) nunca vai falhar
+        const communityAvg = communityAvgRaw.toFixed(1);
+
         container.innerHTML = `
             <div class="backdrop-container">
-                <img src="${backdropUrl}" class="backdrop-img" alt="${series.name}" onerror="this.style.display='none'">
+                <img src="${backdropUrl}" class="backdrop-img" onerror="this.style.display='none'">
             </div>
             <div class="series-detail-content">
                 <div class="series-detail-header">
-                    <img src="${posterUrl}" class="series-detail-poster" alt="${series.name}" onerror="this.src='/uploads/default-poster.png'">
+                    <img src="${posterUrl}" class="series-detail-poster" onerror="this.src='/uploads/default-poster.png'">
                     <div class="series-detail-info">
                         <h2>${series.name}</h2>
-                        <p>${year} • ${series.number_of_seasons || '?'} Temporada(s) • ⭐ ${rating}/10</p>
+                        <p>${year} • ${series.number_of_seasons || '?'} Temporadas • ⭐ ${rating}</p>
                     </div>
                 </div>
-                
                 <div class="series-detail-overview">
                     <h3>Sinopse</h3>
-                    <p>${series.overview || 'Sem sinopse disponível.'}</p>
+                    <p>${series.overview || 'Sem sinopse.'}</p>
                 </div>
-                
                 ${userRatingSection}
-                
                 <div class="rating-section">
-                    <h3>Avaliações da Comunidade ${ratingsData.average ? `(Média: ${ratingsData.average.toFixed(1)} ⭐)` : ''}</h3>
+                    <h3>Comunidade (Nota: ${communityAvg})</h3>
                     <div class="reviews-list">
-                        ${ratingsData.reviews && ratingsData.reviews.length > 0 ? 
-                            ratingsData.reviews.map(rev => {
-                                // CORREÇÃO DO AVATAR - REMOVIDO O TYPO "HJrev.avatar"
-                                const avatarUrl = rev.avatar && rev.avatar.startsWith('http') 
-                                    ? rev.avatar 
-                                    : `/uploads/${rev.avatar || 'default-avatar.png'}`;
-                                
-                                return `
-                                    <div class="review-item">
-                                        <img src="${avatarUrl}" class="review-avatar" alt="${rev.username}" onerror="this.src='/uploads/default-avatar.png'">
-                                        <div class="review-content">
-                                            <strong>${rev.username}</strong> avaliou com ⭐ ${rev.rating}/5
-                                            ${rev.review ? `<p>${rev.review}</p>` : ''}
-                                        </div>
-                                    </div>
-                                `;
-                            }).join('') 
-                            : '<p class="placeholder-text">Ainda não há avaliações. Seja o primeiro!</p>'
-                        }
+                        ${ratingsData.reviews && ratingsData.reviews.length > 0 ? ratingsData.reviews.map(rev => `
+                            <div class="review-item">
+                                <img src="${rev.avatar && rev.avatar.startsWith('http') ? rev.avatar : '/uploads/' + (rev.avatar || 'default-avatar.png')}" class="review-avatar" onerror="this.src='/uploads/default-avatar.png'">
+                                <div class="review-content">
+                                    <strong>${rev.username}</strong> - ⭐ ${rev.rating}
+                                    <p>${rev.review || ''}</p>
+                                </div>
+                            </div>
+                        `).join('') : '<p>Ainda não há avaliações.</p>'}
                     </div>
                 </div>
             </div>
         `;
     } catch (error) {
         console.error('Erro ao carregar detalhes:', error);
-        container.innerHTML = `
-            <div class="container">
-                <p class="placeholder-text">Erro ao carregar detalhes da série. Tente novamente mais tarde.</p>
-            </div>
-        `;
+        container.innerHTML = '<p class="placeholder-text">Erro ao carregar detalhes da série. Tente novamente mais tarde.</p>';
     }
 }
 
@@ -238,45 +225,29 @@ function setRating(rating) {
 // Submeter avaliação
 async function submitRating(event, seriesId) {
     event.preventDefault();
-    
-    if (!currentUser) {
-        alert('Você precisa estar logado para avaliar!');
-        return;
-    }
-    
     const form = event.target;
-    const rating = parseInt(form.rating.value);
-    const review = form.review.value.trim();
+    const rating = form.rating.value;
+    const review = form.review.value;
     const status = form.status.value;
-
-    if (rating === 0) {
-        alert('Por favor, selecione uma nota de 1 a 5 estrelas!');
-        return;
-    }
 
     try {
         const data = await API.addRating(seriesId, rating, review, status);
         if (data.success) {
-            alert('✅ Avaliação salva com sucesso!');
-            // Recarrega a página de detalhes para mostrar a nova avaliação
+            alert('Avaliação salva!');
             showSeriesDetail(seriesId);
-        } else {
-            alert('❌ Erro ao salvar avaliação: ' + (data.error || 'Erro desconhecido'));
         }
-    } catch (error) { 
-        console.error('Erro ao salvar avaliação:', error);
-        alert('❌ Erro ao salvar avaliação. Tente novamente.');
-    }
+    } catch (error) { alert('Erro ao salvar.'); }
 }
 
-// CARREGAR ATIVIDADE RECENTE - OTIMIZADO
+// CARREGAR ATIVIDADE RECENTE (CORRIGIDO PARA OTIMIZAÇÃO E POSTGRES)
 async function loadRecentActivity() {
     const container = document.getElementById('activityFeed'); 
     if (!container) return;
 
-    container.innerHTML = '<div class="loading">Carregando atividades...</div>';
+    container.innerHTML = '<div class="loading">Carregando...</div>';
     
     try {
+        // A API retorna o array diretamente: [{}, {}, ...]
         const activities = await API.getRecentActivity();
         
         if (!activities || activities.length === 0) {
@@ -286,7 +257,8 @@ async function loadRecentActivity() {
         
         container.innerHTML = '';
         
-        // OTIMIZAÇÃO: Busca todas as séries em paralelo
+        // OTIMIZAÇÃO: Busca todas as informações do TMDB em paralelo (Promise.all)
+        // Isso evita que o site trave carregando um por um
         const activityPromises = activities.map(async (activity) => {
             try {
                 const series = await TMDB_API.getSeriesDetails(activity.series_id);
@@ -294,13 +266,14 @@ async function loadRecentActivity() {
                     return { activity, series };
                 }
             } catch (e) {
-                console.error("Erro ao buscar série " + activity.series_id, e);
+                console.error("Erro no TMDB para série " + activity.series_id, e);
             }
             return null;
         });
 
         const results = await Promise.all(activityPromises);
         
+        // Renderiza apenas os resultados válidos
         results.forEach(item => {
             if(item) {
                 const { activity, series } = item;
@@ -309,14 +282,13 @@ async function loadRecentActivity() {
                 activityItem.onclick = () => showSeriesDetail(activity.series_id);
                 
                 const rating = Math.round(activity.rating || 0);
-                
-                // CORREÇÃO DO AVATAR - Cloudinary ou local
+                // Suporte para URL Cloudinary ou Local
                 const userAvatar = activity.avatar && activity.avatar.startsWith('http') 
                     ? activity.avatar 
                     : `/uploads/${activity.avatar || 'default-avatar.png'}`;
                 
                 activityItem.innerHTML = `
-                    <img src="${userAvatar}" class="activity-avatar" alt="${activity.username}" onerror="this.src='/uploads/default-avatar.png'">
+                    <img src="${userAvatar}" class="activity-avatar" onerror="this.src='/uploads/default-avatar.png'">
                     <div class="activity-content">
                         <div>
                             <span class="activity-username">${activity.username}</span> avaliou 
@@ -324,7 +296,7 @@ async function loadRecentActivity() {
                         </div>
                         <div class="activity-text">
                             <span style="color: #ffc107;">${'★'.repeat(rating)}${'☆'.repeat(5 - rating)}</span>
-                            ${activity.review ? ` - "${activity.review.substring(0, 80)}${activity.review.length > 80 ? '...' : ''}"` : ''}
+                            ${activity.review ? ` - "${activity.review.substring(0, 60)}..."` : ''}
                         </div>
                         <div class="activity-date">${new Date(activity.created_at).toLocaleDateString('pt-BR')}</div>
                     </div>
@@ -333,21 +305,16 @@ async function loadRecentActivity() {
             }
         });
 
-        // Se nenhum resultado válido foi encontrado
-        if (container.children.length === 0) {
-            container.innerHTML = '<p class="placeholder-text">Nenhuma atividade disponível no momento</p>';
-        }
-
     } catch (error) {
-        console.error('Erro ao carregar atividades:', error);
-        container.innerHTML = '<p class="placeholder-text">Erro ao carregar atividades recentes</p>';
+        console.error('Erro na atividade:', error);
+        container.innerHTML = '<p class="placeholder-text">Erro ao carregar atividades</p>';
     }
 }
 
 // Função para busca na Hero Section (Página Inicial)
 function heroSearchSeries(event) {
     if (event.key === 'Enter') {
-        const query = event.target.value.trim();
+        const query = event.target.value;
         if (query) {
             window.location.hash = '#search';
             setTimeout(() => {

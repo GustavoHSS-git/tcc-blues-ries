@@ -1,3 +1,5 @@
+
+
 // Funções para fazer requisições à API do TMDB
 const TMDB_API = {
     // Séries populares
