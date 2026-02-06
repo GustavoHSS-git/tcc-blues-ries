@@ -1,6 +1,6 @@
-// Gerenciamento de séries e avaliações
+// Gerenciamento de séries e avaliações - Versão Corrigida para PostgreSQL/Cloudinary
 
-// Renderizar card de série
+// Renderizar card de série (Padrão TMDB)
 function renderSeriesCard(series) {
     const card = document.createElement('div');
     card.className = 'series-card';
@@ -28,12 +28,12 @@ function renderSeriesCard(series) {
 // Carregar séries populares
 async function loadPopularSeries() {
     const container = document.getElementById('popularSeries');
+    if (!container) return;
     container.innerHTML = '<div class="loading">Carregando séries...</div>';
     
     try {
         const data = await TMDB_API.getPopularSeries();
         container.innerHTML = '';
-        
         data.results.slice(0, 12).forEach(series => {
             container.appendChild(renderSeriesCard(series));
         });
@@ -45,12 +45,12 @@ async function loadPopularSeries() {
 // Carregar top séries
 async function loadTopRatedSeries() {
     const container = document.getElementById('topRatedSeries');
+    if (!container) return;
     container.innerHTML = '<div class="loading">Carregando séries...</div>';
     
     try {
         const data = await TMDB_API.getTopRatedSeries();
         container.innerHTML = '';
-        
         data.results.slice(0, 12).forEach(series => {
             container.appendChild(renderSeriesCard(series));
         });
@@ -62,12 +62,12 @@ async function loadTopRatedSeries() {
 // Carregar séries novas
 async function loadNewSeries() {
     const container = document.getElementById('newSeries');
+    if (!container) return;
     container.innerHTML = '<div class="loading">Carregando séries...</div>';
     
     try {
         const data = await TMDB_API.getOnTheAirSeries();
         container.innerHTML = '';
-        
         data.results.slice(0, 12).forEach(series => {
             container.appendChild(renderSeriesCard(series));
         });
@@ -77,11 +77,6 @@ async function loadNewSeries() {
 }
 
 // Buscar séries
-async function searchSeries(event) {
-    if (event && event.key !== 'Enter') return;
-    performSearch();
-}
-
 async function performSearch() {
     const query = document.getElementById('searchInput').value.trim();
     const container = document.getElementById('searchResults');
@@ -104,32 +99,14 @@ async function performSearch() {
         
         const grid = document.createElement('div');
         grid.className = 'series-grid';
-        
-        data.results.forEach(series => {
-            grid.appendChild(renderSeriesCard(series));
-        });
-        
+        data.results.forEach(series => grid.appendChild(renderSeriesCard(series)));
         container.appendChild(grid);
     } catch (error) {
         container.innerHTML = '<p class="placeholder-text">Erro ao buscar séries</p>';
     }
 }
 
-// Busca na hero section
-function heroSearchSeries(event) {
-    if (event.key === 'Enter') {
-        const query = document.getElementById('heroSearch').value.trim();
-        if (query) {
-            window.location.hash = '#search';
-            setTimeout(() => {
-                document.getElementById('searchInput').value = query;
-                performSearch();
-            }, 100);
-        }
-    }
-}
-
-// Mostrar detalhes da série
+// Mostrar detalhes da série (CORRIGIDO PARA POSTGRES)
 async function showSeriesDetail(seriesId) {
     window.location.hash = `#series/${seriesId}`;
     const container = document.getElementById('seriesDetail');
@@ -137,28 +114,20 @@ async function showSeriesDetail(seriesId) {
     
     try {
         const series = await TMDB_API.getSeriesDetails(seriesId);
-        
-        if (!series) {
-            container.innerHTML = '<p class="placeholder-text">Erro ao carregar detalhes</p>';
-            return;
-        }
-        
+        if (!series) throw new Error("Série não encontrada");
+
         const backdropUrl = TMDB_API.getImageUrl(series.backdrop_path, 'w1280');
         const posterUrl = TMDB_API.getImageUrl(series.poster_path);
         const year = series.first_air_date ? series.first_air_date.split('-')[0] : '?';
         const rating = series.vote_average ? series.vote_average.toFixed(1) : 'N/A';
-        const genres = series.genres ? series.genres.map(g => g.name).join(', ') : '';
         
         let userRatingSection = '';
         if (currentUser) {
             try {
-                const userRatingData = await API.getRating(seriesId);
+                const response = await API.getRating(seriesId);
+                // Ajuste: A API retorna { rating: { ... } }
+                const userRating = response.rating; 
                 
-                // PROTEÇÃO: No Postgres, se não existe, ele pode vir undefined ou null
-                // Garantimos que 'userRating' seja o objeto de avaliação ou null
-                const userRating = (userRatingData && userRatingData.rating_data) ? userRatingData.rating_data : null;
-                
-                // Pegamos os valores com segurança usando o operador '||' (ou)
                 const currentStars = userRating ? userRating.rating : 0;
                 const currentStatus = userRating ? userRating.status : 'watching';
                 const currentReview = userRating ? userRating.review : '';
@@ -168,11 +137,10 @@ async function showSeriesDetail(seriesId) {
                         <h3>Sua Avaliação</h3>
                         <form class="rating-form" onsubmit="submitRating(event, ${seriesId})">
                             <div class="form-group">
-                                <label>Avaliação</label>
+                                <label>Nota</label>
                                 <div class="stars" id="ratingStars">
                                     ${[1, 2, 3, 4, 5].map(i => `
                                         <span class="star ${currentStars >= i ? 'active' : ''}" 
-                                              data-rating="${i}" 
                                               onclick="setRating(${i})">★</span>
                                     `).join('')}
                                 </div>
@@ -180,7 +148,7 @@ async function showSeriesDetail(seriesId) {
                             </div>
                             <div class="form-group">
                                 <label>Status</label>
-                                <select name="status" required>
+                                <select name="status">
                                     <option value="watching" ${currentStatus === 'watching' ? 'selected' : ''}>Assistindo</option>
                                     <option value="completed" ${currentStatus === 'completed' ? 'selected' : ''}>Completei</option>
                                     <option value="plan_to_watch" ${currentStatus === 'plan_to_watch' ? 'selected' : ''}>Planejo Assistir</option>
@@ -188,227 +156,131 @@ async function showSeriesDetail(seriesId) {
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label>Review (opcional)</label>
-                                <textarea name="review" placeholder="Escreva sua opinião...">${currentReview}</textarea>
+                                <label>Review</label>
+                                <textarea name="review">${currentReview}</textarea>
                             </div>
-                            <button type="submit" class="btn btn-primary btn-block">Salvar Avaliação</button>
-                            ${userRating ? `<button type="button" class="btn btn-outline btn-block" onclick="deleteRating(${seriesId})">Deletar Avaliação</button>` : ''}
+                            <button type="submit" class="btn btn-primary btn-block">Salvar</button>
                         </form>
                     </div>
                 `;
-            } catch (err) {
-                console.error("Erro ao buscar avaliação do usuário:", err);
-                // Se der erro na API, mostramos a seção vazia em vez de quebrar a página
-                userRatingSection = `<div class="rating-section"><p>Erro ao carregar sua avaliação.</p></div>`;
-            }
+            } catch (err) { console.error(err); }
         }
-        
-        // Buscar avaliações da comunidade
+
         const ratingsData = await API.getSeriesRatings(seriesId);
         
-        const reviewsSection = `
-            <div class="rating-section">
-                <h3>Avaliações da Comunidade</h3>
-                <div style="margin-bottom: 1.5rem;">
-                    <div style="display: flex; align-items: center; gap: 1rem;">
-                        <div style="font-size: 3rem; color: var(--warning);">⭐ ${ratingsData.average || 0}</div>
-                        <div>
-                            <div style="font-size: 1.2rem; font-weight: 600;">${ratingsData.count} avaliações</div>
-                            <div style="color: var(--text-secondary);">Média da comunidade</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="reviews-list">
-                    ${ratingsData.reviews && ratingsData.reviews.length > 0 ? 
-                        ratingsData.reviews.map(review => `
-                            <div class="review-item">
-                                <div class="review-header">
-                                    <img src="/uploads/${review.avatar || 'default-avatar.png'}" alt="${review.username}" class="review-avatar">
-                                    <div class="review-info">
-                                        <div class="review-username">${review.username}</div>
-                                        <div class="review-date">${new Date(review.created_at).toLocaleDateString('pt-BR')}</div>
-                                    </div>
-                                    <div class="review-rating">
-                                        ${'★'.repeat(Math.round(review.rating))}${'☆'.repeat(5 - Math.round(review.rating))}
-                                    </div>
-                                </div>
-                                ${review.review ? `<div class="review-text">${review.review}</div>` : ''}
-                            </div>
-                        `).join('') 
-                        : '<p style="text-align: center; color: var(--text-secondary);">Nenhuma avaliação ainda</p>'
-                    }
-                </div>
-            </div>
-        `;
-        
         container.innerHTML = `
-            <div style="position: relative; overflow: hidden;">
-                <img src="${backdropUrl}" alt="${series.name}" style="width: 100%; height: 400px; object-fit: cover;" 
-                     onerror="this.style.display='none'">
-                <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; 
-                     background: linear-gradient(to bottom, transparent, var(--bg-dark));"></div>
+            <div class="backdrop-container">
+                <img src="${backdropUrl}" class="backdrop-img" onerror="this.style.display='none'">
             </div>
-            
             <div class="series-detail-content">
                 <div class="series-detail-header">
-                    <img src="${posterUrl}" alt="${series.name}" class="series-detail-poster"
-                         onerror="this.src='/uploads/default-poster.png'">
+                    <img src="${posterUrl}" class="series-detail-poster" onerror="this.src='/uploads/default-poster.png'">
                     <div class="series-detail-info">
-                        <h2 class="series-detail-title">${series.name}</h2>
-                        <div class="series-detail-meta">
-                            <span>${year}</span>
-                            <span>${series.number_of_seasons} Temporada${series.number_of_seasons > 1 ? 's' : ''}</span>
-                            <span>${series.number_of_episodes} Episódios</span>
-                            <span>⭐ ${rating}</span>
-                        </div>
-                        ${genres ? `<div style="margin-bottom: 1rem; color: var(--text-secondary);">${genres}</div>` : ''}
+                        <h2>${series.name}</h2>
+                        <p>${year} • ${series.number_of_seasons} Temporadas • ⭐ ${rating}</p>
                     </div>
                 </div>
-                
                 <div class="series-detail-overview">
                     <h3>Sinopse</h3>
-                    <p>${series.overview || 'Sinopse não disponível.'}</p>
+                    <p>${series.overview || 'Sem sinopse.'}</p>
                 </div>
-                
                 ${userRatingSection}
-                ${reviewsSection}
+                <div class="rating-section">
+                    <h3>Comunidade (Nota: ${ratingsData.average || 0})</h3>
+                    <div class="reviews-list">
+                        ${ratingsData.reviews.map(rev => `
+                            <div class="review-item">
+                                <strong>${rev.username}</strong> - ⭐ ${rev.rating}
+                                <p>${rev.review || ''}</p>
+                            </div>
+                        `).join('') || '<p>Ainda não há avaliações.</p>'}
+                    </div>
+                </div>
             </div>
         `;
     } catch (error) {
-        console.error('Erro ao carregar detalhes:', error);
-        container.innerHTML = '<p class="placeholder-text">Erro ao carregar detalhes da série</p>';
+        container.innerHTML = '<p>Erro ao carregar detalhes.</p>';
     }
 }
 
 // Definir avaliação por estrelas
 function setRating(rating) {
     document.getElementById('ratingValue').value = rating;
-    
     const stars = document.querySelectorAll('#ratingStars .star');
     stars.forEach((star, index) => {
-        if (index < rating) {
-            star.classList.add('active');
-        } else {
-            star.classList.remove('active');
-        }
+        star.classList.toggle('active', index < rating);
     });
 }
 
 // Submeter avaliação
 async function submitRating(event, seriesId) {
     event.preventDefault();
-    
-    if (!currentUser) {
-        showLogin();
-        return;
-    }
-    
     const form = event.target;
-    const rating = parseFloat(form.rating.value);
+    const rating = form.rating.value;
     const review = form.review.value;
     const status = form.status.value;
-    
-    if (rating === 0) {
-        alert('Por favor, selecione uma avaliação');
-        return;
-    }
-    
+
     try {
         const data = await API.addRating(seriesId, rating, review, status);
-        
         if (data.success) {
-            alert('Avaliação salva com sucesso!');
-            showSeriesDetail(seriesId); // Recarregar detalhes
-        } else {
-            alert('Erro ao salvar avaliação');
+            alert('Avaliação salva!');
+            showSeriesDetail(seriesId);
         }
-    } catch (error) {
-        alert('Erro ao conectar com o servidor');
-    }
+    } catch (error) { alert('Erro ao salvar.'); }
 }
 
-// Deletar avaliação
-async function deleteRating(seriesId) {
-    if (!confirm('Tem certeza que deseja deletar sua avaliação?')) {
-        return;
-    }
-    
-    try {
-        const data = await API.deleteRating(seriesId);
-        
-        if (data.success) {
-            alert('Avaliação deletada com sucesso!');
-            showSeriesDetail(seriesId); // Recarregar detalhes
-        } else {
-            alert('Erro ao deletar avaliação');
-        }
-    } catch (error) {
-        alert('Erro ao conectar com o servidor');
-    }
-}
-
+// CARREGAR ATIVIDADE RECENTE (CORRIGIDO PARA POSTGRES + CLOUDINARY)
 async function loadRecentActivity() {
-    const container = document.getElementById('activityFeed'); // Verifique se o ID é activityFeed ou recentActivity
+    const container = document.getElementById('activityFeed'); 
     if (!container) return;
 
-    container.innerHTML = '<div class="loading">Carregando atividades...</div>';
+    container.innerHTML = '<div class="loading">Carregando...</div>';
     
     try {
-        const data = await API.getRecentActivity();
+        // A API retorna o array diretamente: [{}, {}, ...]
+        const activities = await API.getRecentActivity();
         
-        // Proteção: Garante que activities seja sempre um array, mesmo se o banco estiver vazio
-        const activities = data && data.activities ? data.activities : [];
-        
-        container.innerHTML = '';
-        
-        if (activities.length === 0) {
+        if (!activities || activities.length === 0) {
             container.innerHTML = '<p class="placeholder-text">Nenhuma atividade recente</p>';
             return;
         }
         
-        // Pegar apenas as 10 últimas atividades
-        for (const activity of activities.slice(0, 10)) {
+        container.innerHTML = '';
+        
+        for (const activity of activities) {
             try {
-                // Buscar informações da série no TMDB
                 const series = await TMDB_API.getSeriesDetails(activity.series_id);
-                
                 if (series) {
                     const activityItem = document.createElement('div');
                     activityItem.className = 'activity-item';
                     activityItem.onclick = () => showSeriesDetail(activity.series_id);
                     
-                    // Tratamento para rating não quebrar se vier nulo do banco
                     const rating = Math.round(activity.rating || 0);
+                    // Suporte para URL Cloudinary ou Local
+                    const userAvatar = activity.avatar && activity.avatar.startsWith('http') 
+                        ? activity.avatar 
+                        : `/uploads/${activity.avatar || 'default-avatar.png'}`;
                     
                     activityItem.innerHTML = `
-                        <img src="/uploads/${activity.avatar || 'default-avatar.png'}" 
-                             alt="${activity.username}" class="activity-avatar"
-                             onerror="this.src='/uploads/default-avatar.png'">
+                        <img src="${userAvatar}" class="activity-avatar" onerror="this.src='/uploads/default-avatar.png'">
                         <div class="activity-content">
                             <div>
-                                <span class="activity-username">${activity.username}</span>
-                                avaliou
-                                <strong>${series.name || 'Série desconhecida'}</strong>
+                                <span class="activity-username">${activity.username}</span> avaliou 
+                                <strong>${series.name}</strong>
                             </div>
                             <div class="activity-text">
-                                ${'★'.repeat(rating)}${'☆'.repeat(5 - rating)}
-                                ${activity.review ? ` - "${activity.review.substring(0, 100)}${activity.review.length > 100 ? '...' : ''}"` : ''}
+                                <span style="color: #ffc107;">${'★'.repeat(rating)}${'☆'.repeat(5 - rating)}</span>
+                                ${activity.review ? ` - "${activity.review.substring(0, 60)}..."` : ''}
                             </div>
-                            <div class="activity-date">
-                                ${new Date(activity.created_at).toLocaleDateString('pt-BR')}
-                            </div>
+                            <div class="activity-date">${new Date(activity.created_at).toLocaleDateString('pt-BR')}</div>
                         </div>
                     `;
-                    
                     container.appendChild(activityItem);
                 }
-            } catch (tmdbError) {
-                console.error('Erro ao buscar detalhes da série no TMDB:', tmdbError);
-                // Continua para a próxima atividade sem travar
-            }
+            } catch (e) { console.error("Erro no TMDB:", e); }
         }
     } catch (error) {
-        console.error('Erro ao carregar atividades:', error);
+        console.error('Erro na atividade:', error);
         container.innerHTML = '<p class="placeholder-text">Erro ao carregar atividades</p>';
     }
 }

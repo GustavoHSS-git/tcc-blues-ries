@@ -1,4 +1,4 @@
-// Gerenciamento de perfil do usuário
+// Gerenciamento de perfil do usuário - Versão Final Corrigida
 
 // Navegar para o perfil
 function navigateToProfile() {
@@ -26,7 +26,7 @@ async function loadUserProfile(userId) {
         const stats = userData.stats || { total_ratings: 0, completed_series: 0, avg_rating: 0 };
         const isOwnProfile = currentUser && currentUser.id === parseInt(userId);
         
-        // --- LÓGICA CLOUDINARY AQUI ---
+        // --- LÓGICA CLOUDINARY CORRIGIDA ---
         const avatarUrl = (user.avatar && user.avatar.startsWith('http')) 
             ? user.avatar 
             : `/uploads/${user.avatar || 'default-avatar.png'}`;
@@ -35,8 +35,8 @@ async function loadUserProfile(userId) {
         if (isOwnProfile) {
             avatarSection = `
                 <div style="position: absolute; bottom: 0; right: 0;">
-                    <label for="avatarUpload" class="btn btn-primary" style="cursor: pointer; font-size: 0.9rem; padding: 0.4rem 0.8rem;">
-                        📷 Alterar
+                    <label for="avatarUpload" class="btn btn-primary" style="cursor: pointer; font-size: 0.9rem; padding: 0.4rem 0.8rem; border-radius: 50%;">
+                        📷
                     </label>
                     <input type="file" id="avatarUpload" accept="image/*" style="display: none;" onchange="handleAvatarUpload(event)">
                 </div>
@@ -51,38 +51,39 @@ async function loadUserProfile(userId) {
                           font-family: inherit; resize: vertical;">${user.bio || ''}</textarea>
                 <button class="btn btn-primary" style="margin-top: 0.5rem;" onclick="saveBio()">Salvar Bio</button>
             </div>
-        ` : `<p class="profile-bio">${user.bio || 'Sem bio disponível.'}</p>`;
+        ` : `<p class="profile-bio" style="margin-top:1rem; color: var(--text-secondary);">${user.bio || 'Sem bio disponível.'}</p>`;
         
         container.innerHTML = `
-            <div class="profile-header">
-                <div class="profile-avatar-container" style="position: relative;">
+            <div class="profile-header" style="display: flex; gap: 2rem; align-items: center; flex-wrap: wrap;">
+                <div class="profile-avatar-container" style="position: relative; width: 150px; height: 150px;">
                     <img src="${avatarUrl}" 
                          alt="${user.username}" class="profile-avatar"
+                         style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%; border: 3px solid var(--primary-color);"
                          onerror="this.src='/uploads/default-avatar.png'">
                     ${avatarSection}
                 </div>
-                <div class="profile-info">
-                    <h2 class="profile-username">${user.username}</h2>
+                <div class="profile-info" style="flex: 1; min-width: 300px;">
+                    <h2 class="profile-username" style="font-size: 2rem;">${user.username}</h2>
                     ${bioSection}
-                    <div class="profile-stats">
+                    <div class="profile-stats" style="display: flex; gap: 2rem; margin-top: 1.5rem;">
                         <div class="stat-item">
-                            <div class="stat-value">${stats.total_ratings || 0}</div>
-                            <div class="stat-label">Avaliações</div>
+                            <div class="stat-value" style="font-size: 1.5rem; font-weight: bold; color: var(--primary-color);">${stats.total_ratings || 0}</div>
+                            <div class="stat-label" style="font-size: 0.8rem; color: var(--text-secondary);">Avaliações</div>
                         </div>
                         <div class="stat-item">
-                            <div class="stat-value">${stats.completed_series || 0}</div>
-                            <div class="stat-label">Completadas</div>
+                            <div class="stat-value" style="font-size: 1.5rem; font-weight: bold; color: var(--primary-color);">${stats.completed_series || 0}</div>
+                            <div class="stat-label" style="font-size: 0.8rem; color: var(--text-secondary);">Completadas</div>
                         </div>
                         <div class="stat-item">
-                            <div class="stat-value">${Number(stats.avg_rating || 0).toFixed(1)}</div>
-                            <div class="stat-label">Média</div>
+                            <div class="stat-value" style="font-size: 1.5rem; font-weight: bold; color: var(--primary-color);">${Number(stats.avg_rating || 0).toFixed(1)}</div>
+                            <div class="stat-label" style="font-size: 0.8rem; color: var(--text-secondary);">Média</div>
                         </div>
                     </div>
                 </div>
             </div>
             <div style="margin-top: 3rem;">
-                <h3 style="margin-bottom: 1.5rem;">Séries Avaliadas</h3>
-                <div class="profile-ratings" id="userRatings">
+                <h3 style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">Séries Avaliadas</h3>
+                <div class="series-grid" id="userRatings">
                     <div class="loading">Carregando avaliações...</div>
                 </div>
             </div>
@@ -96,18 +97,18 @@ async function loadUserProfile(userId) {
     }
 }
 
-// Função separada para as notas para evitar o erro de promise pendente
+// Carregar Lista de Notas (CORRIGIDO PARA O JSON DO SERVER)
 async function loadUserRatingsList(userId) {
     const ratingsContainer = document.getElementById('userRatings');
     if (!ratingsContainer) return;
 
     try {
-        const ratingsData = await API.getUserRatings(userId);
-        const ratings = (ratingsData && ratingsData.ratings) ? ratingsData.ratings : [];
+        // CORREÇÃO: API.getUserRatings já retorna o array direto no PostgreSQL
+        const ratings = await API.getUserRatings(userId);
         
         ratingsContainer.innerHTML = '';
         
-        if (ratings.length === 0) {
+        if (!ratings || ratings.length === 0) {
             ratingsContainer.innerHTML = '<p class="placeholder-text" style="grid-column: 1/-1;">Nenhuma série avaliada ainda</p>';
             return;
         }
@@ -130,52 +131,61 @@ async function loadUserRatingsList(userId) {
                                  onerror="this.src='/uploads/default-poster.png'">
                             <div style="position: absolute; top: 0.5rem; right: 0.5rem; 
                                  background: ${statusColors[rating.status] || '#666'}; 
-                                 color: white; padding: 0.3rem 0.6rem; border-radius: 6px; 
-                                 font-size: 0.75rem; font-weight: 600;">
-                                ${statusLabels[rating.status] || rating.status}
+                                 color: white; padding: 0.2rem 0.5rem; border-radius: 4px; 
+                                 font-size: 0.7rem; font-weight: 600; text-transform: uppercase;">
+                                 ${statusLabels[rating.status] || rating.status}
                             </div>
                         </div>
                         <div class="series-card-content">
                             <div class="series-card-title" title="${series.name}">${series.name}</div>
                             <div class="series-card-info">
-                                <span>${new Date(rating.created_at).toLocaleDateString('pt-BR')}</span>
                                 <span class="series-rating">⭐ ${Number(rating.rating).toFixed(1)}</span>
                             </div>
                         </div>
                     `;
                     ratingsContainer.appendChild(card);
                 }
-            } catch (e) { console.error("Erro ao carregar série na lista:", e); }
+            } catch (e) { console.error("Erro ao carregar série:", e); }
         }
     } catch (error) {
+        console.error("Erro ao carregar notas:", error);
         ratingsContainer.innerHTML = '<p>Erro ao carregar avaliações.</p>';
     }
 }
 
-// Upload de avatar corrigido
+// Upload de avatar
 async function handleAvatarUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
     
-    const formData = new FormData();
-    formData.append('avatar', file);
+    // Feedback visual imediato
+    const btn = event.target.parentElement.querySelector('label');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '...';
     
     try {
         const data = await API.uploadAvatar(file);
         if (data.success) {
-            alert('Avatar atualizado!');
-            location.reload(); // Recarga limpa para atualizar todos os componentes
+            alert('Avatar atualizado com sucesso!');
+            location.reload(); 
+        } else {
+            alert('Erro: ' + (data.error || 'Falha no upload'));
+            btn.innerHTML = originalText;
         }
     } catch (error) {
-        alert('Erro no upload');
+        alert('Erro ao conectar com o servidor');
+        btn.innerHTML = originalText;
     }
 }
 
 // Salvar bio
 async function saveBio() {
     const bio = document.getElementById('bioEdit').value;
+    const btn = document.querySelector('button[onclick="saveBio()"]');
+    btn.disabled = true;
+    btn.innerText = 'Salvando...';
+
     try {
-        // Agora usamos o método PUT que criamos no servidor
         const response = await fetch('/api/user/update', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
@@ -183,9 +193,12 @@ async function saveBio() {
         });
         const data = await response.json();
         if (data.success) {
-            alert('Bio atualizada com sucesso');
+            alert('Bio atualizada!');
         }
     } catch (error) {
         alert('Erro ao salvar bio');
+    } finally {
+        btn.disabled = false;
+        btn.innerText = 'Salvar Bio';
     }
 }
