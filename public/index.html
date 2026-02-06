@@ -6,7 +6,7 @@
     <title>Blue - Avalie suas séries favoritas</title>
     <link rel="stylesheet" href="css/styles.css">
 </head>
-<body>
+<body style="overflow: hidden;">
 
     <div id="loading-screen">
         <div class="claquete">
@@ -15,12 +15,11 @@
         </div>
     </div>
 
-    <!-- Header -->
     <header class="header">
         <div class="container">
             <div class="header-content">
                 <div class="logo">
-                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.--><path fill="#FFD43B" d="M512 128C514 128 515.9 128.1 517.8 128.3L422.1 224L490 224L562 152C570.8 163 576 176.9 576 192L576 448C576 483.3 547.3 512 512 512L128 512C92.7 512 64 483.3 64 448L64 192C64 156.7 92.7 128 128 128L198.1 128L102.1 224L170 224L265 129L266 128L358.1 128L262.1 224L330 224L425 129L426 128L512.1 128z"/></svg>
+                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><path fill="#FFD43B" d="M512 128C514 128 515.9 128.1 517.8 128.3L422.1 224L490 224L562 152C570.8 163 576 176.9 576 192L576 448C576 483.3 547.3 512 512 512L128 512C92.7 512 64 483.3 64 448L64 192C64 156.7 92.7 128 128 128L198.1 128L102.1 224L170 224L265 129L266 128L358.1 128L262.1 224L330 224L425 129L426 128L512.1 128z"/></svg>
                     <h1>Blue</h1>
                 </div>
                 <nav class="nav" id="mainNav">
@@ -46,9 +45,7 @@
         </div>
     </header>
 
-    <!-- Main Content -->
     <main class="main-content" id="mainContent">
-        <!-- Home Page -->
         <section id="homePage" class="page active">
             <div class="container">
                 <div class="hero">
@@ -89,7 +86,6 @@
             </div>
         </section>
 
-        <!-- Search Page -->
         <section id="searchPage" class="page">
             <div class="container">
                 <div class="search-header">
@@ -105,14 +101,10 @@
             </div>
         </section>
 
-        <!-- Series Detail Page -->
         <section id="seriesDetailPage" class="page">
-            <div class="series-detail" id="seriesDetail">
-                <!-- Conteúdo será carregado dinamicamente -->
-            </div>
+            <div class="series-detail" id="seriesDetail"></div>
         </section>
 
-        <!-- Profile Page -->
         <section id="profilePage" class="page">
             <div class="container">
                 <div class="profile-content" id="profileContent">
@@ -122,7 +114,6 @@
         </section>
     </main>
 
-    <!-- Login Modal -->
     <div class="modal" id="loginModal">
         <div class="modal-content">
             <span class="close" onclick="closeModal('loginModal')">&times;</span>
@@ -145,7 +136,6 @@
         </div>
     </div>
 
-    <!-- Register Modal -->
     <div class="modal" id="registerModal">
         <div class="modal-content">
             <span class="close" onclick="closeModal('registerModal')">&times;</span>
@@ -173,37 +163,31 @@
     </div>
 
     <script>
-        // Quando a animação do "topo" terminar, esperamos um pouquinho e sumimos com a tela
+        // --- VACINA: PREVINE ERROS DE VARIÁVEIS NÃO DEFINIDAS ---
+        window.clackSound = { play: () => {}, pause: () => {}, currentTime: 0 };
+
+        // --- LÓGICA DO LOADING SCREEN (SIMPLIFICADA) ---
         const topo = document.querySelector('.topo');
         const loadingScreen = document.getElementById('loading-screen');
 
-        topo.addEventListener('animationend', () => {
-            // A animação dura 0.8s + 0.5s de delay. 
-            // Após bater, esperamos 400ms para dar o efeito de saída.
-            setTimeout(() => {
-                loadingScreen.classList.add('fade-out');
-                document.body.style.overflow = 'auto'; // Libera o scroll do site
-            }, 400);
-            const topo = document.querySelector('.topo');
-const loadingScreen = document.getElementById('loading-screen');
-
-
-
-setTimeout(() => {
-    clackSound.play();
-}, 1200); // 500ms de delay + 700ms de movimento
-
-topo.addEventListener('animationend', () => {
-    setTimeout(() => {
-        loadingScreen.classList.add('fade-out');
-        // Libera o scroll apenas após o sumiço
-        setTimeout(() => { document.body.style.overflow = 'auto'; }, 600);
-    }, 500);
-});
-        });
+        if (topo) {
+            topo.addEventListener('animationend', () => {
+                setTimeout(() => {
+                    loadingScreen.classList.add('fade-out');
+                    // Libera o scroll e remove o loading do DOM após a transição
+                    setTimeout(() => { 
+                        document.body.style.overflow = 'auto'; 
+                        loadingScreen.style.display = 'none';
+                    }, 600);
+                }, 400);
+            });
+        } else {
+            // Fallback caso a animação falhe
+            loadingScreen.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
     </script>
 
-    <!-- Scripts -->
     <script src="js/config.js"></script>
     <script src="js/api.js"></script>
     <script src="js/auth.js"></script>
