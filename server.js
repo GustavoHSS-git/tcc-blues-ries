@@ -10,10 +10,11 @@ const app = express();
 const PORT = process.env.PORT || 10000;
 
 // Configuração do Cloudinary
-// Ele tentará ler a variável do Render (process.env.CLOUDINARY_URL)
-// Se não existir, usará a string de fallback corrigida (sem o prefixo "CLOUDINARY_URL=")
+// Configuração do Cloudinary - Campos separados para evitar erro de parse
 cloudinary.config({ 
-  cloudinary_url: process.env.CLOUDINARY_URL || 'cloudinary://956751932938519:EMAZtnyNZzIKBR5sA8rZasxcXZk@ddwwhhika' 
+  cloud_name: 'ddwwhhika',
+  api_key: '956751932938519',
+  api_secret: 'EMAZtnyNZzIKBR5sA8rZasxcXZk'
 });
 
 // Configuração do Banco de Dados
