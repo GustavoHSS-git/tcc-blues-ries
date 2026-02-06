@@ -6,18 +6,20 @@ const { Pool } = require('pg');
 const path = require('path');
 const fs = require('fs');
 const cloudinary = require('cloudinary').v2; 
+
 const app = express();
 const PORT = process.env.PORT || 10000;
 
-// Configuração do Cloudinary
-// Configuração do Cloudinary - Campos separados para evitar erro de parse
+// ============= CONFIGURAÇÕES EXTERNAS =============
+
+// Configuração do Cloudinary - Campos separados para evitar erro de parse no SDK
 cloudinary.config({ 
-  cloud_name: 'ddwwhhika',
-  api_key: '956751932938519',
-  api_secret: 'EMAZtnyNZzIKBR5sA8rZasxcXZk'
+    cloud_name: 'ddwwhhika',
+    api_key: '956751932938519',
+    api_secret: 'EMAZtnyNZzIKBR5sA8rZasxcXZk'
 });
 
-// Configuração do Banco de Dados
+// Configuração do Banco de Dados PostgreSQL (Supabase/Render)
 const db = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: { rejectUnauthorized: false },
@@ -25,13 +27,14 @@ const db = new Pool({
     idleTimeoutMillis: 30000
 });
 
-// Teste de conexão
+// Teste de conexão com o banco
 db.query('SELECT NOW()', (err) => {
-    if (err) console.error('❌ Erro de conexão:', err.message);
+    if (err) console.error('❌ Erro de conexão com Banco:', err.message);
     else console.log('🚀 Conectado ao PostgreSQL no Supabase');
 });
 
-// Middlewares
+// ============= MIDDLEWARES =============
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
@@ -39,10 +42,13 @@ app.use(session({
     secret: 'seriesbox-secret-key-2024',
     resave: false,
     saveUninitialized: false,
-    cookie: { maxAge: 24 * 60 * 60 * 1000 }
+    cookie: { 
+        maxAge: 24 * 60 * 60 * 1000,
+        secure: false // Defina como true se usar HTTPS em produção com proxy
+    }
 }));
 
-// Configuração de Upload Temporário (Vai para o Render e depois para o Cloudinary)
+// Configuração de Upload Temporário local (necessário para o Multer processar antes do Cloudinary)
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         const uploadDir = path.join(__dirname, 'public', 'uploads');
@@ -55,6 +61,7 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
+// Middleware de Proteção de Rota
 const requireAuth = (req, res, next) => {
     if (req.session.userId) next();
     else res.status(401).json({ error: 'Não autorizado' });
@@ -104,9 +111,13 @@ app.get('/api/check-session', async (req, res) => {
     }
 });
 
+app.post('/api/logout', (req, res) => {
+    req.session.destroy();
+    res.json({ success: true });
+});
+
 // ============= ROTAS DE PERFIL E UPLOAD =============
 
-// ROTA DE UPLOAD PARA CLOUDINARY (Substitui a local)
 app.post('/api/user/avatar', requireAuth, upload.single('avatar'), async (req, res) => {
     try {
         if (!req.file) return res.status(400).json({ error: 'Nenhum arquivo enviado' });
@@ -128,7 +139,6 @@ app.post('/api/user/avatar', requireAuth, upload.single('avatar'), async (req, r
     }
 });
 
-// ROTA PARA ATUALIZAR BIO
 app.put('/api/user/update', requireAuth, async (req, res) => {
     const { bio } = req.body;
     try {
@@ -159,6 +169,39 @@ app.get('/api/user/:id', async (req, res) => {
 
 // ============= ROTAS DE SÉRIES E AVALIAÇÕES =============
 
+// NOVA ROTA: Atividade Recente para a Home (Resolve o erro no series.js:411)
+app.get('/api/recent-activity', async (req, res) => {
+    try {
+        const result = await db.query(`
+            SELECT r.*, u.username, u.avatar 
+            FROM ratings r 
+            JOIN users u ON r.user_id = u.id 
+            ORDER BY r.created_at DESC 
+            LIMIT 10
+        `);
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Erro atividade recente:', err);
+        res.json([]); // Retorna array vazio em vez de erro HTML
+    }
+});
+
+// NOVA ROTA: Avaliações específicas de um usuário (Para a lista no perfil)
+app.get('/api/user/:userId/ratings', async (req, res) => {
+    try {
+        const result = await db.query(`
+            SELECT r.*, u.username, u.avatar 
+            FROM ratings r 
+            JOIN users u ON r.user_id = u.id 
+            WHERE r.user_id = $1 
+            ORDER BY r.created_at DESC`, [req.params.userId]);
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Erro ao buscar ratings do usuário:', err);
+        res.json([]);
+    }
+});
+
 app.get('/api/rating/:seriesId', requireAuth, async (req, res) => {
     try {
         const result = await db.query('SELECT * FROM ratings WHERE user_id = $1 AND series_id = $2', [req.session.userId, req.params.seriesId]);
@@ -171,8 +214,15 @@ app.get('/api/rating/:seriesId', requireAuth, async (req, res) => {
 app.get('/api/series/:id/ratings', async (req, res) => {
     const seriesId = req.params.id;
     try {
-        const reviews = await db.query(`SELECT r.*, u.username, u.avatar FROM ratings r JOIN users u ON r.user_id = u.id WHERE r.series_id = $1 ORDER BY r.created_at DESC`, [seriesId]);
+        const reviews = await db.query(`
+            SELECT r.*, u.username, u.avatar 
+            FROM ratings r 
+            JOIN users u ON r.user_id = u.id 
+            WHERE r.series_id = $1 
+            ORDER BY r.created_at DESC`, [seriesId]);
+            
         const stats = await db.query(`SELECT AVG(rating)::FLOAT as average, COUNT(*)::INT as count FROM ratings WHERE series_id = $1`, [seriesId]);
+        
         res.json({
             average: stats.rows[0].average ? stats.rows[0].average.toFixed(1) : "0.0",
             count: stats.rows[0].count || 0,
@@ -186,20 +236,25 @@ app.get('/api/series/:id/ratings', async (req, res) => {
 app.post('/api/rating', requireAuth, async (req, res) => {
     const { seriesId, rating, review, status } = req.body;
     try {
+        // Usamos +seriesId e +rating para garantir que sejam números no PostgreSQL
         await db.query(`
-            INSERT INTO ratings (user_id, series_id, rating, review, status) VALUES ($1, $2, $3, $4, $5)
-            ON CONFLICT (user_id, series_id) DO UPDATE SET rating = EXCLUDED.rating, review = EXCLUDED.review, status = EXCLUDED.status`,
-            [req.session.userId, seriesId, rating, review, status]);
+            INSERT INTO ratings (user_id, series_id, rating, review, status) 
+            VALUES ($1, $2, $3, $4, $5)
+            ON CONFLICT (user_id, series_id) 
+            DO UPDATE SET 
+                rating = EXCLUDED.rating, 
+                review = EXCLUDED.review, 
+                status = EXCLUDED.status,
+                created_at = CURRENT_TIMESTAMP`,
+            [req.session.userId, +seriesId, +rating, review, status]);
         res.json({ success: true });
     } catch (err) {
+        console.error('Erro ao salvar rating:', err);
         res.status(500).json({ error: 'Erro ao salvar avaliação' });
     }
 });
 
-app.post('/api/logout', (req, res) => {
-    req.session.destroy();
-    res.json({ success: true });
-});
+// ============= TRATAMENTO DE ROTAS FRONTEND =============
 
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
