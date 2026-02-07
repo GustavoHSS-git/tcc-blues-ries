@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blue - Avalie suas séries favoritas</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body style="overflow: hidden;">
+
+    <div id="loading-screen">
+        <div class="claquete">
+            <div class="topo"></div>
+            <div class="base"></div>
+        </div>
+    </div>
+
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><path fill="#FFD43B" d="M512 128C514 128 515.9 128.1 517.8 128.3L422.1 224L490 224L562 152C570.8 163 576 176.9 576 192L576 448C576 483.3 547.3 512 512 512L128 512C92.7 512 64 483.3 64 448L64 192C64 156.7 92.7 128 128 128L198.1 128L102.1 224L170 224L265 129L266 128L358.1 128L262.1 224L330 224L425 129L426 128L512.1 128z"/></svg>
+                    <h1>Blue</h1>
+                </div>
+                <nav class="nav" id="mainNav">
+                    <a href="#home" class="nav-link active">Início</a>
+                    <a href="#search" class="nav-link">Buscar</a>
+                    <a href="#profile" class="nav-link" id="profileLink" style="display: none;">Perfil</a>
+                </nav>
+                <div class="auth-buttons" id="authButtons">
+                    <button class="btn btn-outline" onclick="showLogin()">Entrar</button>
+                    <button class="btn btn-primary" onclick="showRegister()">Cadastrar</button>
+                </div>
+                <div class="user-menu" id="userMenu" style="display: none;">
+                    <div class="user-avatar" onclick="toggleUserDropdown()">
+                        <img src="uploads/default-avatar.png" alt="Avatar" id="headerAvatar">
+                        <span id="headerUsername"></span>
+                    </div>
+                    <div class="user-dropdown" id="userDropdown">
+                        <a href="#profile" onclick="navigateToProfile()">Meu Perfil</a>
+                        <a href="#" onclick="logout()">Sair</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content" id="mainContent">
+        <section id="homePage" class="page active">
+            <div class="container">
+                <div class="hero">
+                    <h2>Descubra, avalie e compartilhe suas séries favoritas</h2>
+                    <p>Junte-se à comunidade de amantes de séries</p>
+                    <div class="search-bar-hero">
+                        <input type="text" id="heroSearch" placeholder=" Buscar séries..." onkeyup="heroSearchSeries(event)">
+                    </div>
+                </div>
+
+                
+                <section class="series-section">
+                    <h3><i class="fas fa-bolt"></i>Novidades</h3>
+                    <div class="series-grid carousel-grid" id="newSeries">
+                        <div class="loading">Carregando Novidades...</div>
+                        </div>
+                 </section>
+
+                <section class="series-section">
+                    <h3>Séries Populares</h3>
+                    <div class="series-grid" id="popularSeries">
+                        <div class="loading">Carregando Séries...</div>
+                    </div>
+                </section>
+
+                <section class="series-section">
+                    <h3>Animes</h3>
+                    <div id="animeSeries" class="series-grid">
+                        <div class="loading">Carregando Animes...</div>
+                    </div>
+                </section>
+
+
+                <section class="series-section">
+                    <h3>Top Avaliadas</h3>
+                    <div class="series-grid" id="topRatedSeries">
+                        <div class="loading">Carregando séries...</div>
+                    </div>
+                </section>
+
+
+                <section class="activity-section">
+                    <h3>Atividades Recentes</h3>
+                    <div class="activity-feed" id="activityFeed">
+                        <div class="loading">Carregando atividades...</div>
+                    </div>
+                </section>
+            </div>
+        </section>
+
+        <section id="searchPage" class="page">
+            <div class="container">
+                <div class="search-header">
+                    <h2>Buscar Séries</h2>
+                    <div class="search-bar">
+                        <input type="text" id="searchInput" placeholder="Digite o nome da série..." onkeyup="searchSeries(event)">
+                        <button class="btn btn-primary" onclick="performSearch()">Buscar</button>
+                    </div>
+                </div>
+                <div class="search-results" id="searchResults">
+                    <p class="placeholder-text">Digite algo para começar a buscar...</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="seriesDetailPage" class="page">
+            <div class="series-detail" id="seriesDetail"></div>
+        </section>
+
+        <section id="profilePage" class="page">
+            <div class="container">
+                <div class="profile-content" id="profileContent">
+                    <div class="loading">Carregando perfil...</div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div class="modal" id="loginModal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('loginModal')">&times;</span>
+            <h2>Entrar</h2>
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label>Senha</label>
+                    <input type="password" name="password" required>
+                </div>
+                <div class="error-message" id="loginError"></div>
+                <button type="submit" class="btn btn-primary btn-block">Entrar</button>
+                <p class="modal-footer-text">
+                    Não tem uma conta? <a href="#" onclick="switchToRegister()">Cadastre-se</a>
+                </p>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal" id="registerModal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('registerModal')">&times;</span>
+            <h2>Cadastrar</h2>
+            <form id="registerForm" onsubmit="handleRegister(event)">
+                <div class="form-group">
+                    <label>Nome de usuário</label>
+                    <input type="text" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label>Senha</label>
+                    <input type="password" name="password" required minlength="6">
+                </div>
+                <div class="error-message" id="registerError"></div>
+                <button type="submit" class="btn btn-primary btn-block">Cadastrar</button>
+                <p class="modal-footer-text">
+                    Já tem uma conta? <a href="#" onclick="switchToLogin()">Entre aqui</a>
+                </p>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // --- VACINA: PREVINE ERROS DE VARIÁVEIS NÃO DEFINIDAS ---
+        window.clackSound = { play: () => {}, pause: () => {}, currentTime: 0 };
+
+        // --- LÓGICA DO LOADING SCREEN (SIMPLIFICADA) ---
+        const topo = document.querySelector('.topo');
+        const loadingScreen = document.getElementById('loading-screen');
+
+        if (topo) {
+            topo.addEventListener('animationend', () => {
+                setTimeout(() => {
+                    loadingScreen.classList.add('fade-out');
+                    // Libera o scroll e remove o loading do DOM após a transição
+                    setTimeout(() => { 
+                        document.body.style.overflow = 'auto'; 
+                        loadingScreen.style.display = 'none';
+                    }, 600);
+                }, 400);
+            });
+        } else {
+            // Fallback caso a animação falhe
+            loadingScreen.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+    </script>
+
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/series.js"></script>
+    <script src="js/profile.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+{
+  "name": "seriesbox",
+  "version": "1.0.0",
+  "description": "Plataforma de avaliação de séries de TV - Similar ao Letterboxd",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "series",
+    "tv",
+    "reviews",
+    "ratings"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cloudinary": "^2.9.0",
+    "express": "^4.18.2",
+    "express-session": "^1.17.3",
+    "multer": "^1.4.5-lts.1",
+    "node.js": "^0.0.1-security",
+    "pg": "^8.18.0",
+    "sqlite3": "^5.1.6"
+  },
+  "devDependencies": {
+    "@types/node": "^25.2.1",
+    "typescript": "^5.9.3"
+  }
+}
