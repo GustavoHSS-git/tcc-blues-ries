@@ -42,26 +42,30 @@ async function loadPopularSeries() {
     }
 }
 
-// Carregar Tudo (Animes, Novidades e Populares)
+ // Carregar Tudo (Animes, Novidades e Populares)
 async function fetchAndDisplaySeries() {
     try {
         const allSeries = await api.getSeries(); 
 
-        // 1. Filtra e exibe os Animes
-        const animes = allSeries.filter(s => s.category?.toLowerCase() === 'anime');
-        renderSeries(animes, 'animeSeries');
+        // 1. Animes
+        const animes = allSeries.filter(s =>
+            s.category &&
+            s.category.toString().toLowerCase().includes('anime')
+        );
+        renderSeries(animes.slice(0, 12), 'animeSeries');
 
-        // 2. Filtra e exibe as Novidades (ex: adicionados recentemente)
+        // 2. Novidades
         const news = [...allSeries].reverse().slice(0, 10);
         renderSeries(news, 'newSeries');
 
-        // 3. Exibe as Populares (lista completa)
-        renderSeries(allSeries, 'popularSeries');
+        // 3. Populares
+        renderSeries(allSeries.slice(0, 12), 'popularSeries');
 
     } catch (error) {
         console.error("Erro ao carregar séries:", error);
     }
 }
+
 
 // Carregar top séries
 async function loadTopRatedSeries() {
