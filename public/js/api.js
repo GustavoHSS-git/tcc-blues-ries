@@ -1,6 +1,6 @@
-
-
-// Funções para fazer requisições à API do TMDB
+// ==========================================
+// TMDB_API: Funções da Nuvem (Filmes e Séries)
+// ==========================================
 const TMDB_API = {
     // Séries populares
     getPopularSeries: async () => {
@@ -41,7 +41,46 @@ const TMDB_API = {
         }
     },
 
-    // Buscar séries
+    // Buscar Animes (Animação + Keyword Anime)
+    getAnimes: async () => {
+        try {
+            const response = await fetch(
+                `${TMDB_CONFIG.BASE_URL}/discover/tv?api_key=${TMDB_CONFIG.API_KEY}&language=pt-BR&with_genres=16&with_keywords=210024&sort_by=popularity.desc`
+            );
+            return await response.json();
+        } catch (error) {
+            console.error('Erro ao buscar animes:', error);
+            return { results: [] };
+        }
+    },
+
+    // Buscar Novidades (Séries que estrearam recentemente)
+    getRecentReleases: async () => {
+        try {
+            const response = await fetch(
+                `${TMDB_CONFIG.BASE_URL}/tv/on_the_air?api_key=${TMDB_CONFIG.API_KEY}&language=pt-BR&page=1`
+            );
+            return await response.json();
+        } catch (error) {
+            console.error('Erro ao buscar novidades:', error);
+            return { results: [] };
+        }
+    },
+
+    // Buscar por Gênero específico
+    getSeriesByGenre: async (genreId) => {
+        try {
+            const response = await fetch(
+                `${TMDB_CONFIG.BASE_URL}/discover/tv?api_key=${TMDB_CONFIG.API_KEY}&language=pt-BR&with_genres=${genreId}&sort_by=popularity.desc`
+            );
+            return await response.json();
+        } catch (error) {
+            console.error('Erro ao buscar gênero:', error);
+            return { results: [] };
+        }
+    },
+
+    // Buscar séries (Barra de busca)
     searchSeries: async (query) => {
         try {
             const response = await fetch(
@@ -74,6 +113,9 @@ const TMDB_API = {
     }
 };
 
+// ==========================================
+// API: Funções do seu Banco de Dados (Login, Reviews, Atividade)
+// ==========================================
 const API = {
     // Autenticação
     register: async (username, email, password) => {
@@ -95,9 +137,7 @@ const API = {
     },
 
     logout: async () => {
-        const response = await fetch(`${APP_CONFIG.API_BASE}/logout`, {
-            method: 'POST'
-        });
+        const response = await fetch(`${APP_CONFIG.API_BASE}/logout`, { method: 'POST' });
         return await response.json();
     },
 
@@ -106,14 +146,13 @@ const API = {
         return await response.json();
     },
 
-    // Usuário
+    // Perfil do Usuário
     getUser: async (userId) => {
         const response = await fetch(`${APP_CONFIG.API_BASE}/user/${userId}`);
         if (!response.ok) return null; 
         return await response.json();
     },
 
-    // AJUSTADO: Rota alterada para /user/update para bater com o server.js
     updateProfile: async (bio) => {
         const response = await fetch(`${APP_CONFIG.API_BASE}/user/update`, {
             method: 'PUT',
@@ -123,14 +162,11 @@ const API = {
         return await response.json();
     },
 
-    // UPLOAD DE AVATAR (Cloudinary)
     uploadAvatar: async (file) => {
         const formData = new FormData();
-        formData.append('avatar', file); // 'avatar' deve ser o mesmo nome no multer
-        
+        formData.append('avatar', file);
         const response = await fetch(`${APP_CONFIG.API_BASE}/user/avatar`, {
             method: 'POST',
-            // Importante: Não definir Content-Type aqui para arquivos
             body: formData
         });
         return await response.json();
@@ -161,49 +197,9 @@ const API = {
         return await response.json();
     },
 
-    // Atividades
+    // Atividades da Comunidade
     getRecentActivity: async () => {
         const response = await fetch(`${APP_CONFIG.API_BASE}/recent-activity`);
         return await response.json();
     }
-
-    // Buscar Animes (Animação + Keyword Anime)
-        ,getAnimes: async () => {
-        try {
-            const response = await fetch(
-                `${TMDB_CONFIG.BASE_URL}/discover/tv?api_key=${TMDB_CONFIG.API_KEY}&language=pt-BR&with_genres=16&with_keywords=210024&sort_by=popularity.desc`
-            );
-            return await response.json();
-        } catch (error) {
-            console.error('Erro ao buscar animes:', error);
-            return { results: [] };
-        }
-    }, // <-- Certifique-se de que esta vírgula existe se houver mais funções abaixo
-
-    // Buscar por Gênero específico (Ex: Ação = 10759)
-    getSeriesByGenre: async (genreId) => {
-        try {
-            const response = await fetch(
-                `${TMDB_CONFIG.BASE_URL}/discover/tv?api_key=${TMDB_CONFIG.API_KEY}&language=pt-BR&with_genres=${genreId}&sort_by=popularity.desc`
-            );
-            return await response.json();
-        } catch (error) {
-            console.error('Erro ao buscar gênero:', error);
-            return { results: [] };
-        }
-    },
-    
-    // Buscar Novidades (Séries que estrearam recentemente)
-    getRecentReleases: async () => {
-        try {
-            const response = await fetch(
-                `${TMDB_CONFIG.BASE_URL}/tv/on_the_air?api_key=${TMDB_CONFIG.API_KEY}&language=pt-BR&page=1`
-            );
-            return await response.json();
-        } catch (error) {
-            console.error('Erro ao buscar novidades:', error);
-            return { results: [] };
-        }
-    }
 };
-
