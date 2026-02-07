@@ -42,10 +42,11 @@ async function loadPopularSeries() {
     }
 }
 
- // Carregar Tudo (Animes, Novidades e Populares)
+// Carregar Tudo (Animes, Novidades e Populares)
+// ✅ CORREÇÃO AQUI (SÓ ISSO)
 async function fetchAndDisplaySeries() {
     try {
-        const allSeries = await api.getSeries(); 
+        const allSeries = await API.getSeries();
 
         // 1. Animes
         const animes = allSeries.filter(s =>
@@ -65,7 +66,6 @@ async function fetchAndDisplaySeries() {
         console.error("Erro ao carregar séries:", error);
     }
 }
-
 
 // Carregar top séries
 async function loadTopRatedSeries() {

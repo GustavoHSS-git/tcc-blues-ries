@@ -33,7 +33,7 @@
                 </div>
                 <div class="user-menu" id="userMenu" style="display: none;">
                     <div class="user-avatar" onclick="toggleUserDropdown()">
-                        <img src="uploads/default-avatar.png" alt="Avatar" id="headerAvatar">
+                        <img src="/uploads/default-avatar.png" alt="Avatar" id="headerAvatar">
                         <span id="headerUsername"></span>
                     </div>
                     <div class="user-dropdown" id="userDropdown">
@@ -56,13 +56,12 @@
                     </div>
                 </div>
 
-                
                 <section class="series-section">
                     <h3><i class="fas fa-bolt"></i>Novidades</h3>
                     <div class="series-grid carousel-grid" id="newSeries">
                         <div class="loading">Carregando Novidades...</div>
-                        </div>
-                 </section>
+                    </div>
+                </section>
 
                 <section class="series-section">
                     <h3>Séries Populares</h3>
@@ -78,14 +77,12 @@
                     </div>
                 </section>
 
-
                 <section class="series-section">
                     <h3>Top Avaliadas</h3>
                     <div class="series-grid" id="topRatedSeries">
                         <div class="loading">Carregando séries...</div>
                     </div>
                 </section>
-
 
                 <section class="activity-section">
                     <h3>Atividades Recentes</h3>
@@ -173,10 +170,8 @@
     </div>
 
     <script>
-        // --- VACINA: PREVINE ERROS DE VARIÁVEIS NÃO DEFINIDAS ---
         window.clackSound = { play: () => {}, pause: () => {}, currentTime: 0 };
 
-        // --- LÓGICA DO LOADING SCREEN (SIMPLIFICADA) ---
         const topo = document.querySelector('.topo');
         const loadingScreen = document.getElementById('loading-screen');
 
@@ -184,7 +179,6 @@
             topo.addEventListener('animationend', () => {
                 setTimeout(() => {
                     loadingScreen.classList.add('fade-out');
-                    // Libera o scroll e remove o loading do DOM após a transição
                     setTimeout(() => { 
                         document.body.style.overflow = 'auto'; 
                         loadingScreen.style.display = 'none';
@@ -192,7 +186,6 @@
                 }, 400);
             });
         } else {
-            // Fallback caso a animação falhe
             loadingScreen.style.display = 'none';
             document.body.style.overflow = 'auto';
         }

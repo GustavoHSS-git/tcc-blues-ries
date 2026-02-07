@@ -54,7 +54,7 @@ const TMDB_API = {
         }
     },
 
-    // Buscar Novidades (Séries que estrearam recentemente)
+    // Buscar Novidades
     getRecentReleases: async () => {
         try {
             const response = await fetch(
@@ -67,7 +67,7 @@ const TMDB_API = {
         }
     },
 
-    // Buscar por Gênero específico
+    // Buscar por Gênero
     getSeriesByGenre: async (genreId) => {
         try {
             const response = await fetch(
@@ -80,7 +80,7 @@ const TMDB_API = {
         }
     },
 
-    // Buscar séries (Barra de busca)
+    // Buscar séries
     searchSeries: async (query) => {
         try {
             const response = await fetch(
@@ -113,8 +113,9 @@ const TMDB_API = {
     }
 };
 
+
 // ==========================================
-// API: Funções do seu Banco de Dados (Login, Reviews, Atividade)
+// API: Banco de Dados (Node / Postgres)
 // ==========================================
 const API = {
     // Autenticação
@@ -146,10 +147,10 @@ const API = {
         return await response.json();
     },
 
-    // Perfil do Usuário
+    // Perfil
     getUser: async (userId) => {
         const response = await fetch(`${APP_CONFIG.API_BASE}/user/${userId}`);
-        if (!response.ok) return null; 
+        if (!response.ok) return null;
         return await response.json();
     },
 
@@ -172,18 +173,20 @@ const API = {
         return await response.json();
     },
 
-    // Avaliações
-    addRating: async (seriesId, rating, review, status) => {
+    // =========================
+    // AVALIAÇÕES (CORRIGIDO)
+    // =========================
+    addRating: async (tmdb_id, rating, review, status) => {
         const response = await fetch(`${APP_CONFIG.API_BASE}/rating`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ seriesId, rating, review, status })
+            body: JSON.stringify({ tmdb_id, rating, review, status })
         });
         return await response.json();
     },
 
-    getRating: async (seriesId) => {
-        const response = await fetch(`${APP_CONFIG.API_BASE}/rating/${seriesId}`);
+    getRating: async (tmdb_id) => {
+        const response = await fetch(`${APP_CONFIG.API_BASE}/rating/${tmdb_id}`);
         return await response.json();
     },
 
@@ -192,12 +195,12 @@ const API = {
         return await response.json();
     },
 
-    getSeriesRatings: async (seriesId) => {
-        const response = await fetch(`${APP_CONFIG.API_BASE}/series/${seriesId}/ratings`);
+    getSeriesRatings: async (tmdb_id) => {
+        const response = await fetch(`${APP_CONFIG.API_BASE}/series/${tmdb_id}/ratings`);
         return await response.json();
     },
 
-    // Atividades da Comunidade
+    // Atividade recente
     getRecentActivity: async () => {
         const response = await fetch(`${APP_CONFIG.API_BASE}/recent-activity`);
         return await response.json();
