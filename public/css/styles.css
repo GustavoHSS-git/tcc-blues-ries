@@ -298,12 +298,12 @@ body {
     gap: 0.5rem;
 }
 
+/* --- GRID DE ANIMES (E OUTRAS CATEGORIAS) --- */
 .series-grid {
     display: grid;
-    /* Trocamos o '1fr' (que estica) por '200px' (que trava o tamanho) */
     grid-template-columns: repeat(auto-fill, 200px); 
     gap: 2rem;
-    /* Isso impede que eles fiquem centralizados e gigantes se houver poucos cards */
+    padding: 2rem 0;
     justify-content: flex-start; 
 }
 
@@ -428,13 +428,13 @@ body {
 
 /* --- POSTER NA PÁGINA DE DETALHES --- */
 .series-detail-poster {
-    width: 300px !important;    /* Tamanho fixo de destaque */
-    min-width: 300px !important; 
-    height: 450px !important;   /* Altura proporcional */
+    width: 300px;           /* Tamanho maior e fixo para destaque */
+    min-width: 300px;       /* Impede que ele encolha */
+    height: 450px;          /* Altura proporcional ao destaque */
     border-radius: 12px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-    object-fit: cover !important;
-    display: block;
+    object-fit: cover;
+    display: block;         /* Garante que não herde o flex-shrink errado */
 }
 
 /* Ajuste para não quebrar o layout em telas menores */
@@ -829,8 +829,9 @@ body {
     .hero h2 {
         font-size: 1.8rem;
     }
+
     .series-grid {
-        grid-template-columns: repeat(2, 1fr); /* 2 colunas iguais no mobile */
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
         gap: 1rem;
     }
 
