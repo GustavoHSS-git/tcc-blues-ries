@@ -364,8 +364,11 @@ async function performSearch() {
 
 // Busca na home (hero search)
 async function heroSearchSeries(event) {
-    if (event.key === 'Enter') {
-        performSearch();
+    const query = document.getElementById('heroSearch').value.trim();
+    if (event.key === 'Enter' && query) {
+        document.getElementById('searchInput').value = query;
+        window.location.hash = '#search';
+        setTimeout(() => performSearch(), 100);
     }
 }
 

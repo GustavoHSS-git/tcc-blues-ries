@@ -254,29 +254,55 @@ body {
 }
 
 .hero h2 {  
-    font-size: 2.8rem;
-    margin-bottom: 0.5rem;
+    font-size: 2.5rem;
+    margin-bottom: 0.8rem;
     max-width: 900px;
-    line-height: 1.05;
+    line-height: 1.2;
     background: linear-gradient(135deg, #ffd43b, #00c6ff);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .hero p {
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     color: var(--text-secondary);
-    margin-bottom: 2rem;
+    margin-bottom: 2.5rem;
+    max-width: 600px;
 }
 
 .search-bar-hero {
-    max-width: 600px;
+    max-width: 650px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.search-bar-hero input {
+    width: 100%;
+    padding: 1.1rem 1.8rem;
+    background: var(--bg-card);
+    border: 2px solid var(--border-color);
+    border-radius: 50px;
+    color: var(--text-primary);
+    font-size: 1rem;
+    transition: all 0.3s;
+}
+
+.search-bar-hero input::placeholder {
+    color: var(--text-secondary);
+    opacity: 0.7;
+}
+
+.search-bar {
+    display: flex;
+    gap: 1rem;
+    width: 100%;
+    max-width: 800px;
     margin: 0 auto;
 }
 
-.search-bar-hero input,
 .search-bar input {
-    width: 100%;
+    flex: 1;
     padding: 1rem 1.5rem;
     background: var(--bg-card);
     border: 2px solid var(--border-color);
@@ -284,6 +310,11 @@ body {
     color: var(--text-primary);
     font-size: 1rem;
     transition: all 0.3s;
+}
+
+.search-bar input::placeholder {
+    color: var(--text-secondary);
+    opacity: 0.7;
 }
 
 .search-bar-hero input:focus,
