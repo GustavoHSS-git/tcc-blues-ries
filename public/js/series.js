@@ -163,7 +163,7 @@ async function submitRating(event, seriesId) {
 
     // Criamos o objeto completo que o backend espera
     const ratingPayload = {
-        seriesId: seriesId,
+        tmdb_id: seriesId,
         rating: ratingValue,
         review: reviewText,
         status: watchStatus,

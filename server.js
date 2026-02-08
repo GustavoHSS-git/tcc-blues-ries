@@ -253,14 +253,14 @@ app.get('/api/series/:id/ratings', async (req, res) => {
 
 // Salvar ou Atualizar avaliação
 app.post('/api/rating', requireAuth, async (req, res) => {
-    const { seriesId, rating, review, status, title, poster, backdrop, overview, category } = req.body;
+    const { tmdb_id, rating, review, status, title, poster, backdrop, overview, category } = req.body;
     
     try {
         // Esta rota usa a função SQL add_or_update_rating para manter a integridade dos dados
         await db.query(`SELECT add_or_update_rating($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`, 
         [
             req.session.userId, 
-            +seriesId, 
+            +tmdb_id, 
             title, 
             poster, 
             backdrop, 
