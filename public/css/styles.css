@@ -216,6 +216,7 @@ body {
 .main-content {
     margin-top: 80px;
     min-height: calc(100vh - 80px);
+    padding-top: 2rem;
 }
 
 .page {
@@ -255,8 +256,8 @@ body {
 }
 
 .hero.hero-compact {
-    min-height: 100px;
-    padding: 1.5rem 1rem;
+    min-height: 130px;
+    padding: 2rem 1rem;
 }
 
 .hero h2 {  
@@ -281,6 +282,9 @@ body {
     max-width: 650px;
     margin: 0 auto;
     width: 100%;
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
 }
 
 .search-bar-hero input {
@@ -482,13 +486,14 @@ body {
 }
 
 .series-detail-poster {
-    width: 280px;
-    min-height: 420px;
+    width: 250px;
+    min-height: 380px;
+    max-width: 100%;
     aspect-ratio: 2/3;
     object-fit: contain;
     background: var(--bg-hover);
-    border-radius: 12px;
-    box-shadow: 0 8px 32px rgba(0, 212, 255, 0.2), 0 4px 16px rgba(0, 0, 0, 0.4);
+    border-radius: 8px;
+    box-shadow: 0 12px 40px rgba(0, 212, 255, 0.25), 0 6px 20px rgba(0, 0, 0, 0.5);
     flex-shrink: 0;
 }
 
