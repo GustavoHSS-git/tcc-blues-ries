@@ -172,14 +172,14 @@ const API = {
         return await response.json();
     },
 
-    // Avaliações
-    addRating: async (seriesId, rating, review, status) => {
-        const response = await fetch(`${APP_CONFIG.API_BASE}/rating`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ seriesId, rating, review, status })
-        });
-        return await response.json();
+   // Adicione os campos extras no envio
+    addRating: async (seriesData) => {
+    const response = await fetch(`${APP_CONFIG.API_BASE}/rating`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(seriesData) // Passamos o objeto completo
+    });
+    return await response.json();
     },
 
     getRating: async (seriesId) => {

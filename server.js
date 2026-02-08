@@ -234,25 +234,31 @@ app.get('/api/series/:id/ratings', async (req, res) => {
 });
 
 app.post('/api/rating', requireAuth, async (req, res) => {
-    const { seriesId, rating, review, status } = req.body;
+    // Agora recebemos todos os dados necessários para a função SQL
+    const { seriesId, rating, review, status, title, poster, backdrop, overview, category } = req.body;
+    
     try {
-        // Usamos +seriesId e +rating para garantir que sejam números no PostgreSQL
-        await db.query(`
-            INSERT INTO ratings (user_id, series_id, rating, review, status) 
-            VALUES ($1, $2, $3, $4, $5)
-            ON CONFLICT (user_id, series_id) 
-            DO UPDATE SET 
-                rating = EXCLUDED.rating, 
-                review = EXCLUDED.review, 
-                status = EXCLUDED.status,
-                created_at = CURRENT_TIMESTAMP`,
-            [req.session.userId, +seriesId, +rating, review, status]);
+        // Chamamos a função add_or_update_rating que você criou!
+        await db.query(`SELECT add_or_update_rating($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`, 
+        [
+            req.session.userId, 
+            +seriesId, // Este é o tmdb_id que vira p_tmdb_id
+            title, 
+            poster, 
+            backdrop, 
+            overview, 
+            category, 
+            +rating, 
+            review, 
+            status
+        ]);
         res.json({ success: true });
     } catch (err) {
         console.error('Erro ao salvar rating:', err);
         res.status(500).json({ error: 'Erro ao salvar avaliação' });
     }
 });
+
 
 // ============= TRATAMENTO DE ROTAS FRONTEND =============
 

@@ -25,6 +25,16 @@ function renderSeriesCard(series) {
     return card;
 }
 
+// Função auxiliar para renderizar múltiplas séries em um container
+function renderSeries(seriesList, containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    container.innerHTML = '';
+    seriesList.forEach(series => {
+        container.appendChild(renderSeriesCard(series));
+    });
+}
+
 // Carregar séries populares
 async function loadPopularSeries() {
     const container = document.getElementById('popularSeries');
@@ -42,27 +52,18 @@ async function loadPopularSeries() {
     }
 }
 
- // Carregar Tudo (Animes, Novidades e Populares)
+ // Carregar Tudo (Animes, Novidades e Populares) - Versão Corrigida para TMDB
 async function fetchAndDisplaySeries() {
     try {
-        const allSeries = await api.getSeries(); 
-
-        // 1. Animes
-        const animes = allSeries.filter(s =>
-            s.category &&
-            s.category.toString().toLowerCase().includes('anime')
-        );
-        renderSeries(animes.slice(0, 12), 'animeSeries');
-
-        // 2. Novidades
-        const news = [...allSeries].reverse().slice(0, 10);
-        renderSeries(news, 'newSeries');
-
-        // 3. Populares
-        renderSeries(allSeries.slice(0, 12), 'popularSeries');
-
+        // Carrega as seções em paralelo para melhor performance
+        await Promise.all([
+            loadAnimeSection(),
+            loadNewReleasesSection(),
+            loadPopularSeries(),
+            loadTopRatedSeries()
+        ]);
     } catch (error) {
-        console.error("Erro ao carregar séries:", error);
+        console.error("Erro ao carregar seções de séries:", error);
     }
 }
 
@@ -191,13 +192,22 @@ async function showSeriesDetail(seriesId) {
             } catch (err) { console.error(err); }
         }
 
-        // --- TRATAMENTO DA MÉDIA 
-        const ratingsData = await API.getSeriesRatings(seriesId);
-        
-        // Transformamos em número primeiro, se for nulo vira 0
-        const communityAvgRaw = ratingsData && ratingsData.average ? parseFloat(ratingsData.average) : 0;
-        // Agora o toFixed(1) nunca vai falhar
-        const communityAvg = communityAvgRaw.toFixed(1);
+        // --- TRATAMENTO DA MÉDIA UNIFICADO ---
+        let ratingsData = { average: 0, reviews: [] };
+
+            try {
+            // Busca as avaliações do seu banco de dados local
+            ratingsData = await API.getSeriesRatings(seriesId);
+                } catch (e) { 
+                console.error("Sem avaliações locais", e); 
+        }
+
+        // Otimização: Consolida a lógica em uma única variável constante
+        // Usamos o operador ?? para garantir valores padrão caso ratingsData ou average sejam nulos
+        const averageValue = parseFloat(ratingsData?.average || 0);
+        const communityAvg = averageValue.toFixed(1);
+
+        // Agora você pode usar communityAvg com segurança no seu innerHTML
 
         container.innerHTML = `
             <div class="backdrop-container">
@@ -247,22 +257,43 @@ function setRating(rating) {
     });
 }
 
-// Submeter avaliação
+// Submeter avaliação - Corrigido para bater com api.js e server.js
 async function submitRating(event, seriesId) {
     event.preventDefault();
     const form = event.target;
-    const rating = form.rating.value;
-    const review = form.review.value;
-    const status = form.status.value;
+    
+    // Captura os valores individualmente
+    const ratingValue = document.getElementById('ratingValue').value;
+    const reviewText = form.review.value;
+    const watchStatus = form.status.value;
+
+    if (!ratingValue || ratingValue == "0") {
+        alert("Por favor, selecione uma nota antes de salvar.");
+        return;
+    }
 
     try {
-        const data = await API.addRating(seriesId, rating, review, status);
+        // IMPORTANTE: Passamos os argumentos separadamente como definido no seu api.js
+        const data = await API.addRating(
+            seriesId, 
+            ratingValue, 
+            reviewText, 
+            watchStatus
+        );
+
         if (data.success) {
-            alert('Avaliação salva!');
-            showSeriesDetail(seriesId);
+            alert('Avaliação salva com sucesso!');
+            showSeriesDetail(seriesId); // Atualiza a tela para mostrar a nova média
+        } else {
+            alert('Erro ao salvar: ' + (data.error || 'Erro desconhecido'));
         }
-    } catch (error) { alert('Erro ao salvar.'); }
+    } catch (error) {
+        console.error('Erro ao salvar avaliação:', error);
+        alert('Erro de conexão com o servidor.');
+    }
 }
+// Torna a função global para o formulário achar
+window.submitRating = submitRating;
 
 // CARREGAR ATIVIDADE RECENTE (CORRIGIDO PARA OTIMIZAÇÃO E POSTGRES)
 async function loadRecentActivity() {
@@ -366,14 +397,15 @@ window.searchSeries = searchSeries;
 
 // --- CARREGAR ANIMES ---
 async function loadAnimeSection() {
-    const container = document.getElementById('animeSeries'); // Alterado para animeSeries
+    const container = document.getElementById('animeSeries'); 
     if (!container) return;
+    container.innerHTML = '<div class="loading">Carregando animes...</div>';
 
     try {
         const data = await TMDB_API.getAnimes();
         container.innerHTML = ''; 
         
-        data.results.forEach(series => {
+        data.results.slice(0, 12).forEach(series => {
             container.appendChild(renderSeriesCard(series));
         });
     } catch (error) {
@@ -383,16 +415,18 @@ async function loadAnimeSection() {
 
 // --- CARREGAR NOVIDADES ---
 async function loadNewReleasesSection() {
-    const container = document.getElementById('newSeries'); // Mantido como newSeries
+    const container = document.getElementById('newSeries'); 
     if (!container) return;
+    container.innerHTML = '<div class="loading">Carregando novidades...</div>';
 
     try {
         const data = await TMDB_API.getRecentReleases();
         container.innerHTML = '';
-        data.results.forEach(series => {
+        data.results.slice(0, 12).forEach(series => {
             container.appendChild(renderSeriesCard(series));
         });
     } catch (error) {
         console.error("Erro ao carregar novidades:", error);
+        container.innerHTML = '<p>Erro ao carregar novidades</p>';
     }
 }
