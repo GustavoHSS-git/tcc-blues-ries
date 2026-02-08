@@ -251,6 +251,12 @@ body {
     border-radius: 14px;
     background-size: cover;
     background-position: center;
+    transition: all 0.3s ease;
+}
+
+.hero.hero-compact {
+    min-height: 100px;
+    padding: 1.5rem 1rem;
 }
 
 .hero h2 {  
@@ -477,11 +483,13 @@ body {
 
 .series-detail-poster {
     width: 280px;
-    height: auto;
+    min-height: 420px;
     aspect-ratio: 2/3;
-    object-fit: cover;
+    object-fit: contain;
+    background: var(--bg-hover);
     border-radius: 12px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 8px 32px rgba(0, 212, 255, 0.2), 0 4px 16px rgba(0, 0, 0, 0.4);
+    flex-shrink: 0;
 }
 
 .series-detail-info {

@@ -37,6 +37,11 @@ function updateUIForLoggedInUser() {
             this.onerror = null;
         };
     }
+    
+    // Atualizar banner se função existir
+    if (typeof updateHeroBanner === 'function') {
+        updateHeroBanner();
+    }
 }
 
 // Atualizar interface para usuário deslogado
@@ -45,6 +50,11 @@ function updateUIForLoggedOutUser() {
     document.getElementById('authButtons').style.display = 'flex';
     document.getElementById('userMenu').style.display = 'none';
     document.getElementById('profileLink').style.display = 'none';
+    
+    // Atualizar banner se função existir
+    if (typeof updateHeroBanner === 'function') {
+        updateHeroBanner();
+    }
 }
 
 // Toggle dropdown do usuário

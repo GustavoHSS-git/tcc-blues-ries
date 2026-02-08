@@ -24,6 +24,9 @@ function loadHomePage() {
     showPage('homePage');
     document.querySelector('.nav-link[href="#home"]').classList.add('active');
     
+    // Ajustar banner se autenticado
+    updateHeroBanner();
+    
     // Carregar conteúdo da Nuvem (TMDB)
     loadNewReleasesSection(); 
     loadAnimeSection();       
@@ -32,6 +35,23 @@ function loadHomePage() {
     
     // Carregar conteúdo do seu Banco (Atividade dos usuários)
     loadRecentActivity();
+}
+
+// Ajustar banner de acordo com estado de autenticação
+function updateHeroBanner() {
+    const hero = document.querySelector('.hero');
+    const heroTitle = hero?.querySelector('h2');
+    const heroSubtitle = hero?.querySelector('p');
+    
+    if (currentUser && heroTitle && heroSubtitle) {
+        hero.classList.add('hero-compact');
+        heroTitle.style.display = 'none';
+        heroSubtitle.style.display = 'none';
+    } else if (heroTitle && heroSubtitle) {
+        hero?.classList.remove('hero-compact');
+        heroTitle.style.display = 'block';
+        heroSubtitle.style.display = 'block';
+    }
 }
 
 // Carregar página de busca
