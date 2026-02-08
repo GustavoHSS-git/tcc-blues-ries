@@ -331,6 +331,43 @@ async function loadTopRatedSeries() {
     }
 }
 
+// Função de busca de séries
+async function performSearch() {
+    const searchInput = document.getElementById('searchInput');
+    const query = searchInput.value.trim();
+    
+    if (!query) {
+        document.getElementById('searchResults').innerHTML = '<p class="placeholder-text">Digite algo para buscar</p>';
+        return;
+    }
+    
+    const resultsContainer = document.getElementById('searchResults');
+    resultsContainer.innerHTML = '<div class="loading">Buscando séries...</div>';
+    
+    try {
+        const data = await TMDB_API.searchSeries(query);
+        resultsContainer.innerHTML = '';
+        
+        if (data.results && data.results.length > 0) {
+            data.results.forEach(series => {
+                resultsContainer.appendChild(renderSeriesCard(series));
+            });
+        } else {
+            resultsContainer.innerHTML = '<p class="placeholder-text">Nenhuma série encontrada para "' + query + '"</p>';
+        }
+    } catch (error) {
+        console.error('Erro ao buscar séries:', error);
+        resultsContainer.innerHTML = '<p class="placeholder-text">Erro ao buscar séries</p>';
+    }
+}
+
+// Busca na home (hero search)
+async function heroSearchSeries(event) {
+    if (event.key === 'Enter') {
+        performSearch();
+    }
+}
+
 window.submitRating = submitRating;
 window.setRating = setRating;
 window.searchSeries = searchSeries;

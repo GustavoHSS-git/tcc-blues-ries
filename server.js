@@ -268,10 +268,13 @@ app.post('/api/rating', requireAuth, async (req, res) => {
     const { tmdb_id, rating, review, status, title, poster, backdrop, overview, genre, first_air_date, number_of_seasons } = req.body;
     
     try {
+        // Converter first_air_date para formato DATE se existir
+        const dateValue = first_air_date ? new Date(first_air_date).toISOString().split('T')[0] : null;
+        
         // Esta rota usa a função SQL add_or_update_rating com o novo schema
         const result = await db.query(`
             SELECT * FROM add_or_update_rating(
-                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
+                $1, $2, $3, $4, $5, $6, $7, $8::DATE, $9::INT, $10::NUMERIC, $11, $12
             )`, 
         [
             req.session.userId,           // p_user_id
@@ -280,29 +283,38 @@ app.post('/api/rating', requireAuth, async (req, res) => {
             poster,                       // p_poster
             backdrop,                     // p_backdrop
             overview,                     // p_overview
-            genre,                        // p_genre
-            first_air_date || null,       // p_first_air_date
-            +number_of_seasons || null,   // p_number_of_seasons
-            +rating,                      // p_rating
+            genre || null,                // p_genre
+            dateValue,                    // p_first_air_date (convertido para DATE)
+            number_of_seasons || null,    // p_number_of_seasons
+            +rating,                      // p_rating (convertido para NUMERIC)
             review || null,               // p_review
             status                        // p_status
         ]);
         
-        if (result.rows[0] && result.rows[0].success) {
+        if (result.rows && result.rows.length > 0) {
             res.json({ success: true, rating_id: result.rows[0].rating_id });
         } else {
             res.status(500).json({ error: 'Erro ao salvar avaliação' });
         }
     } catch (err) {
         console.error('Erro ao salvar rating:', err);
-        res.status(500).json({ error: 'Erro ao salvar avaliação' });
+        res.status(500).json({ error: 'Erro ao salvar avaliação: ' + err.message });
     }
 });
 
 // Rotas de Estatísticas
-app.get('/api/series/:series_id/stats', async (req, res) => {
+app.get('/api/series/:tmdb_id/stats', async (req, res) => {
     try {
-        const result = await db.query('SELECT * FROM get_series_stats($1)', [req.params.series_id]);
+        // Primeiro, busca a série pelo tmdb_id
+        const seriesResult = await db.query('SELECT id FROM series WHERE tmdb_id = $1', [req.params.tmdb_id]);
+        
+        if (!seriesResult.rows[0]) {
+            return res.json({ total_ratings: 0, average_rating: 0, rating_distribution: {} });
+        }
+        
+        const series_id = seriesResult.rows[0].id;
+        const result = await db.query('SELECT * FROM get_series_stats($1)', [series_id]);
+        
         if (result.rows[0]) {
             res.json(result.rows[0]);
         } else {
