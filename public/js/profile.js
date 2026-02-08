@@ -115,7 +115,8 @@ async function loadUserRatingsList(userId) {
         
         for (const rating of ratings) {
             try {
-                const series = await TMDB_API.getSeriesDetails(rating.series_id);
+                // `rating.series_id` é o id interno do DB; usar `rating.tmdb_id` para chamar a API TMDB
+                const series = await TMDB_API.getSeriesDetails(rating.tmdb_id);
                 if (series) {
                     const card = document.createElement('div');
                     card.className = 'series-card';
