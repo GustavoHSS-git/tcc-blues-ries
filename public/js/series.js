@@ -238,6 +238,96 @@ function setRating(rating) {
 }
 
 function searchSeries(event) { if (event.key === 'Enter') performSearch(); }
+
+// Carregadores de seções da página inicial
+async function loadNewReleasesSection() {
+    const container = document.getElementById('newSeries');
+    if (!container) return;
+    
+    container.innerHTML = '<div class="loading">Carregando novidades...</div>';
+    try {
+        const data = await TMDB_API.getRecentReleases();
+        container.innerHTML = '';
+        
+        if (data.results && data.results.length > 0) {
+            data.results.slice(0, 10).forEach(series => {
+                container.appendChild(renderSeriesCard(series));
+            });
+        } else {
+            container.innerHTML = '<p class="placeholder-text">Nenhuma novidade encontrada</p>';
+        }
+    } catch (error) {
+        console.error('Erro ao carregar novidades:', error);
+        container.innerHTML = '<p class="placeholder-text">Erro ao carregar novidades</p>';
+    }
+}
+
+async function loadAnimeSection() {
+    const container = document.getElementById('animeSeries');
+    if (!container) return;
+    
+    container.innerHTML = '<div class="loading">Carregando animes...</div>';
+    try {
+        const data = await TMDB_API.getAnimes();
+        container.innerHTML = '';
+        
+        if (data.results && data.results.length > 0) {
+            data.results.slice(0, 10).forEach(series => {
+                container.appendChild(renderSeriesCard(series));
+            });
+        } else {
+            container.innerHTML = '<p class="placeholder-text">Nenhum anime encontrado</p>';
+        }
+    } catch (error) {
+        console.error('Erro ao carregar animes:', error);
+        container.innerHTML = '<p class="placeholder-text">Erro ao carregar animes</p>';
+    }
+}
+
+async function loadPopularSeries() {
+    const container = document.getElementById('popularSeries');
+    if (!container) return;
+    
+    container.innerHTML = '<div class="loading">Carregando populares...</div>';
+    try {
+        const data = await TMDB_API.getPopularSeries();
+        container.innerHTML = '';
+        
+        if (data.results && data.results.length > 0) {
+            data.results.slice(0, 10).forEach(series => {
+                container.appendChild(renderSeriesCard(series));
+            });
+        } else {
+            container.innerHTML = '<p class="placeholder-text">Nenhuma série popular encontrada</p>';
+        }
+    } catch (error) {
+        console.error('Erro ao carregar séries populares:', error);
+        container.innerHTML = '<p class="placeholder-text">Erro ao carregar séries populares</p>';
+    }
+}
+
+async function loadTopRatedSeries() {
+    const container = document.getElementById('topRatedSeries');
+    if (!container) return;
+    
+    container.innerHTML = '<div class="loading">Carregando melhores...</div>';
+    try {
+        const data = await TMDB_API.getTopRatedSeries();
+        container.innerHTML = '';
+        
+        if (data.results && data.results.length > 0) {
+            data.results.slice(0, 10).forEach(series => {
+                container.appendChild(renderSeriesCard(series));
+            });
+        } else {
+            container.innerHTML = '<p class="placeholder-text">Nenhuma série top encontrada</p>';
+        }
+    } catch (error) {
+        console.error('Erro ao carregar top séries:', error);
+        container.innerHTML = '<p class="placeholder-text">Erro ao carregar top séries</p>';
+    }
+}
+
 window.submitRating = submitRating;
 window.setRating = setRating;
 window.searchSeries = searchSeries;
