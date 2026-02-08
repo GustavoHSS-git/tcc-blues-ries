@@ -172,7 +172,9 @@ async function submitRating(event, seriesId) {
         poster: s.poster_path,
         backdrop: s.backdrop_path,
         overview: s.overview,
-        category: (s.genres && s.genres.length > 0) ? s.genres[0].name : 'Série'
+        genre: (s.genres && s.genres.length > 0) ? s.genres[0].name : 'Série',
+        first_air_date: s.first_air_date || null,
+        number_of_seasons: s.number_of_seasons || 0
     };
 
     try {

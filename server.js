@@ -265,27 +265,71 @@ app.get('/api/series/:tmdb_id/ratings', async (req, res) => {
 
 // Salvar ou Atualizar avaliação
 app.post('/api/rating', requireAuth, async (req, res) => {
-    const { tmdb_id, rating, review, status, title, poster, backdrop, overview, category } = req.body;
+    const { tmdb_id, rating, review, status, title, poster, backdrop, overview, genre, first_air_date, number_of_seasons } = req.body;
     
     try {
-        // Esta rota usa a função SQL add_or_update_rating para manter a integridade dos dados
-        await db.query(`SELECT add_or_update_rating($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`, 
+        // Esta rota usa a função SQL add_or_update_rating com o novo schema
+        const result = await db.query(`
+            SELECT * FROM add_or_update_rating(
+                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
+            )`, 
         [
-            req.session.userId, 
-            +tmdb_id, 
-            title, 
-            poster, 
-            backdrop, 
-            overview, 
-            category, 
-            +rating, 
-            review, 
-            status
+            req.session.userId,           // p_user_id
+            +tmdb_id,                     // p_tmdb_id
+            title,                        // p_title
+            poster,                       // p_poster
+            backdrop,                     // p_backdrop
+            overview,                     // p_overview
+            genre,                        // p_genre
+            first_air_date || null,       // p_first_air_date
+            +number_of_seasons || null,   // p_number_of_seasons
+            +rating,                      // p_rating
+            review || null,               // p_review
+            status                        // p_status
         ]);
-        res.json({ success: true });
+        
+        if (result.rows[0] && result.rows[0].success) {
+            res.json({ success: true, rating_id: result.rows[0].rating_id });
+        } else {
+            res.status(500).json({ error: 'Erro ao salvar avaliação' });
+        }
     } catch (err) {
         console.error('Erro ao salvar rating:', err);
         res.status(500).json({ error: 'Erro ao salvar avaliação' });
+    }
+});
+
+// Rotas de Estatísticas
+app.get('/api/series/:series_id/stats', async (req, res) => {
+    try {
+        const result = await db.query('SELECT * FROM get_series_stats($1)', [req.params.series_id]);
+        if (result.rows[0]) {
+            res.json(result.rows[0]);
+        } else {
+            res.json({ total_ratings: 0, average_rating: 0, rating_distribution: {} });
+        }
+    } catch (err) {
+        console.error('Erro ao buscar stats da série:', err);
+        res.status(500).json({ error: 'Erro ao buscar estatísticas' });
+    }
+});
+
+app.get('/api/user/:user_id/stats', requireAuth, async (req, res) => {
+    // Apenas o usuário pode ver suas próprias stats
+    if (parseInt(req.params.user_id) !== req.session.userId) {
+        return res.status(403).json({ error: 'Acesso negado' });
+    }
+    
+    try {
+        const result = await db.query('SELECT * FROM get_user_stats($1)', [req.params.user_id]);
+        if (result.rows[0]) {
+            res.json(result.rows[0]);
+        } else {
+            res.json({ total_rated: 0, average_rating: 0, watching: 0, completed: 0, plan_to_watch: 0, dropped: 0 });
+        }
+    } catch (err) {
+        console.error('Erro ao buscar stats do usuário:', err);
+        res.status(500).json({ error: 'Erro ao buscar estatísticas' });
     }
 });
 

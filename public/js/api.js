@@ -177,6 +177,17 @@ const API = {
         return await response.json();
     },
 
+    // Estatísticas
+    getSeriesStats: async (seriesId) => {
+        const response = await fetch(`${APP_CONFIG.API_BASE}/series/${seriesId}/stats`);
+        return await response.json();
+    },
+
+    getUserStats: async (userId) => {
+        const response = await fetch(`${APP_CONFIG.API_BASE}/user/${userId}/stats`);
+        return await response.json();
+    },
+
     getRecentActivity: async () => {
         const response = await fetch(`${APP_CONFIG.API_BASE}/recent-activity`);
         return await response.json();
