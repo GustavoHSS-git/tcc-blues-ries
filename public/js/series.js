@@ -207,8 +207,7 @@ async function loadRecentActivity() {
         activities.forEach(activity => {
             const activityItem = document.createElement('div');
             activityItem.className = 'activity-item';
-            // usar tmdb_id (id da TMDB) ao abrir detalhes, não o id interno do DB
-            activityItem.onclick = () => showSeriesDetail(activity.tmdb_id || activity.series_id);
+            activityItem.onclick = () => showSeriesDetail(activity.series_id);
             
             const rating = Math.round(activity.rating || 0);
             const userAvatar = activity.avatar && activity.avatar.startsWith('http') 
@@ -364,11 +363,8 @@ async function performSearch() {
 
 // Busca na home (hero search)
 async function heroSearchSeries(event) {
-    const query = document.getElementById('heroSearch').value.trim();
-    if (event.key === 'Enter' && query) {
-        document.getElementById('searchInput').value = query;
-        window.location.hash = '#search';
-        setTimeout(() => performSearch(), 100);
+    if (event.key === 'Enter') {
+        performSearch();
     }
 }
 

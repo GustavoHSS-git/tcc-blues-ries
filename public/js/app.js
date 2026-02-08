@@ -155,3 +155,25 @@ document.addEventListener('submit', (e) => {
     }
     e.preventDefault();
 });
+
+// Efeito de Blur Dinâmico no Scroll
+window.addEventListener('scroll', () => {
+    // Apenas executa se estivermos na página de detalhes
+    if (window.location.hash.startsWith('#series/')) {
+        const backdrop = document.querySelector('.backdrop-img');
+        if (backdrop) {
+            const scrollValue = window.scrollY;
+            
+            // Calcula o blur: aumenta 1px a cada 50px de scroll, max 10px
+            const blur = Math.min(scrollValue / 50, 10);
+            
+            // Calcula o brilho: diminui conforme desce, min 0.3
+            const brightness = Math.max(0.6 - (scrollValue / 1000), 0.3);
+            
+            backdrop.style.filter = `blur(${blur}px) brightness(${brightness})`;
+            
+            // Leve efeito de zoom out ao descer para dar profundidade
+            backdrop.style.transform = `scale(${1 + (scrollValue / 5000)})`;
+        }
+    }
+});
