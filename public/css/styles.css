@@ -762,7 +762,15 @@ body {
 }
 
 .search-results {
-    min-height: 400px;
+    min-height: 200px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1.5rem;
+    align-items: start;
+}
+
+.search-results .series-card {
+    max-width: 100%;
 }
 
 .placeholder-text {
