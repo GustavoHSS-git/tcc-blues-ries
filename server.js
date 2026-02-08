@@ -213,12 +213,12 @@ app.get('/api/user/:userId/ratings', async (req, res) => {
     }
 });
 
-// Buscar avaliação específica (Check se o usuário já avaliou)
-app.get('/api/rating/:seriesId', requireAuth, async (req, res) => {
+// Buscar avaliação específica (Check se o usuário já avaliou) - usa tmdb_id
+app.get('/api/rating/:tmdb_id', requireAuth, async (req, res) => {
     try {
         const result = await db.query(
-            'SELECT * FROM ratings WHERE user_id = $1 AND series_id = $2', 
-            [req.session.userId, req.params.seriesId]
+            'SELECT r.* FROM ratings r JOIN series s ON r.series_id = s.id WHERE r.user_id = $1 AND s.tmdb_id = $2', 
+            [req.session.userId, req.params.tmdb_id]
         );
         res.json({ rating: result.rows[0] || null });
     } catch (err) {
@@ -226,20 +226,23 @@ app.get('/api/rating/:seriesId', requireAuth, async (req, res) => {
     }
 });
 
-// Buscar todas as avaliações de uma série (Página de Detalhes)
-app.get('/api/series/:id/ratings', async (req, res) => {
-    const seriesId = req.params.id;
+// Buscar todas as avaliações de uma série (Página de Detalhes) - usa tmdb_id
+app.get('/api/series/:tmdb_id/ratings', async (req, res) => {
+    const tmdb_id = req.params.tmdb_id;
     try {
         const reviews = await db.query(`
-            SELECT r.*, u.username, u.avatar 
+            SELECT r.*, u.username, u.avatar, s.title, s.poster, s.tmdb_id
             FROM ratings r 
             JOIN users u ON r.user_id = u.id 
-            WHERE r.series_id = $1 
-            ORDER BY r.created_at DESC`, [seriesId]);
+            JOIN series s ON r.series_id = s.id 
+            WHERE s.tmdb_id = $1 
+            ORDER BY r.created_at DESC`, [tmdb_id]);
             
         const stats = await db.query(`
             SELECT AVG(rating)::FLOAT as average, COUNT(*)::INT as count 
-            FROM ratings WHERE series_id = $1`, [seriesId]);
+            FROM ratings r 
+            JOIN series s ON r.series_id = s.id 
+            WHERE s.tmdb_id = $1`, [tmdb_id]);
         
         res.json({
             average: stats.rows[0].average ? stats.rows[0].average.toFixed(1) : "0.0",

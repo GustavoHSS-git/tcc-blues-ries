@@ -133,6 +133,7 @@ async function showSeriesDetail(seriesId) {
                                 <img src="${rev.avatar && rev.avatar.startsWith('http') ? rev.avatar : '/uploads/' + (rev.avatar || 'default-avatar.png')}" class="review-avatar" onerror="this.src='/uploads/default-avatar.png'">
                                 <div class="review-content">
                                     <strong>${rev.username}</strong> - ⭐ ${rev.rating}
+                                    ${rev.title ? `<p style="font-size: 0.9em; color: #888;">Série: ${rev.title}</p>` : ''}
                                     <p>${rev.review || ''}</p>
                                 </div>
                             </div>
