@@ -185,9 +185,12 @@ app.post('/api/user/avatar', requireAuth, upload.single('avatar'), async (req, r
 app.get('/api/recent-activity', async (req, res) => {
     try {
         const result = await db.query(`
-            SELECT r.*, u.username, u.avatar 
+            SELECT r.id, r.rating, r.review, r.created_at,
+                   u.username, u.avatar,
+                   s.title, s.poster, s.tmdb_id, s.id as series_id
             FROM ratings r 
             JOIN users u ON r.user_id = u.id 
+            JOIN series s ON r.series_id = s.id
             ORDER BY r.created_at DESC 
             LIMIT 10
         `);
@@ -221,7 +224,7 @@ app.get('/api/user/:userId/ratings', async (req, res) => {
 app.get('/api/rating/:tmdb_id', requireAuth, async (req, res) => {
     try {
         const result = await db.query(
-            'SELECT r.* FROM ratings r JOIN series s ON r.series_id = s.id WHERE r.user_id = $1 AND s.tmdb_id = $2', 
+            'SELECT r.id, r.rating, r.review, r.status, r.created_at, r.user_id, r.series_id FROM ratings r JOIN series s ON r.series_id = s.id WHERE r.user_id = $1 AND s.tmdb_id = $2', 
             [req.session.userId, req.params.tmdb_id]
         );
         res.json({ rating: result.rows[0] || null });
