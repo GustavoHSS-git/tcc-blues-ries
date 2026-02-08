@@ -202,13 +202,17 @@ app.get('/api/recent-activity', async (req, res) => {
 app.get('/api/user/:userId/ratings', async (req, res) => {
     try {
         const result = await db.query(`
-            SELECT r.*, u.username, u.avatar 
+            SELECT r.id, r.user_id, r.series_id, r.rating, r.review, r.status, r.created_at,
+                   u.username, u.avatar,
+                   s.title, s.poster, s.tmdb_id
             FROM ratings r 
             JOIN users u ON r.user_id = u.id 
+            JOIN series s ON r.series_id = s.id
             WHERE r.user_id = $1 
             ORDER BY r.created_at DESC`, [req.params.userId]);
         res.json(result.rows);
     } catch (err) {
+        console.error('Erro ao buscar ratings do usuário:', err);
         res.json([]);
     }
 });
