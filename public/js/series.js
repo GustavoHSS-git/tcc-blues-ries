@@ -1,4 +1,4 @@
-// Gerenciamento de séries e avaliações - Versão Final Consolidada
+// Gerenciamento de séries e avaliações - Versão Final Consolidada e Revisitada
 
 // Renderizar card de série (Padrão TMDB)
 function renderSeriesCard(series) {
@@ -25,37 +25,9 @@ function renderSeriesCard(series) {
     return card;
 }
 
-// Função auxiliar para renderizar múltiplas séries em um container
-function renderSeries(seriesList, containerId) {
-    const container = document.getElementById(containerId);
-    if (!container) return;
-    container.innerHTML = '';
-    seriesList.forEach(series => {
-        container.appendChild(renderSeriesCard(series));
-    });
-}
-
-// Carregar séries populares
-async function loadPopularSeries() {
-    const container = document.getElementById('popularSeries');
-    if (!container) return;
-    container.innerHTML = '<div class="loading">Carregando séries...</div>';
-    
-    try {
-        const data = await TMDB_API.getPopularSeries();
-        container.innerHTML = '';
-        data.results.slice(0, 12).forEach(series => {
-            container.appendChild(renderSeriesCard(series));
-        });
-    } catch (error) {
-        container.innerHTML = '<p class="placeholder-text">Erro ao carregar séries</p>';
-    }
-}
-
-// Carregar Tudo (Animes, Novidades e Populares) - Versão Corrigida para TMDB
+// Carregar Tudo (Animes, Novidades e Populares)
 async function fetchAndDisplaySeries() {
     try {
-        // Carrega as seções em paralelo para melhor performance
         await Promise.all([
             loadAnimeSection(),
             loadNewReleasesSection(),
@@ -67,54 +39,7 @@ async function fetchAndDisplaySeries() {
     }
 }
 
-// Carregar top séries
-async function loadTopRatedSeries() {
-    const container = document.getElementById('topRatedSeries');
-    if (!container) return;
-    container.innerHTML = '<div class="loading">Carregando séries...</div>';
-    
-    try {
-        const data = await TMDB_API.getTopRatedSeries();
-        container.innerHTML = '';
-        data.results.slice(0, 12).forEach(series => {
-            container.appendChild(renderSeriesCard(series));
-        });
-    } catch (error) {
-        container.innerHTML = '<p class="placeholder-text">Erro ao carregar séries</p>';
-    }
-}
-
-// Buscar séries
-async function performSearch() {
-    const query = document.getElementById('searchInput').value.trim();
-    const container = document.getElementById('searchResults');
-    
-    if (!query) {
-        container.innerHTML = '<p class="placeholder-text">Digite algo para começar a buscar...</p>';
-        return;
-    }
-    
-    container.innerHTML = '<div class="loading">Buscando...</div>';
-    
-    try {
-        const data = await TMDB_API.searchSeries(query);
-        container.innerHTML = '';
-        
-        if (data.results.length === 0) {
-            container.innerHTML = '<p class="placeholder-text">Nenhuma série encontrada</p>';
-            return;
-        }
-        
-        const grid = document.createElement('div');
-        grid.className = 'series-grid';
-        data.results.forEach(series => grid.appendChild(renderSeriesCard(series)));
-        container.appendChild(grid);
-    } catch (error) {
-        container.innerHTML = '<p class="placeholder-text">Erro ao buscar séries</p>';
-    }
-}
-
-// Mostrar detalhes da série 
+// Mostrar detalhes da série e gerenciar formulário de avaliação
 async function showSeriesDetail(seriesId) {
     window.location.hash = `#series/${seriesId}`;
     const container = document.getElementById('seriesDetail');
@@ -130,7 +55,7 @@ async function showSeriesDetail(seriesId) {
         const rating = series.vote_average ? series.vote_average.toFixed(1) : 'N/A';
         
         let userRatingSection = '';
-        if (currentUser) {
+        if (typeof currentUser !== 'undefined' && currentUser) {
             try {
                 const response = await API.getRating(seriesId);
                 const userRating = response.rating; 
@@ -138,6 +63,9 @@ async function showSeriesDetail(seriesId) {
                 const currentStars = userRating ? userRating.rating : 0;
                 const currentStatus = userRating ? userRating.status : 'watching';
                 const currentReview = userRating ? userRating.review : '';
+
+                // Armazenamos os dados da série para o submitRating usar depois
+                window.currentViewingSeries = series;
 
                 userRatingSection = `
                     <div class="rating-section">
@@ -173,16 +101,12 @@ async function showSeriesDetail(seriesId) {
             } catch (err) { console.error(err); }
         }
 
-        // --- TRATAMENTO DA MÉDIA UNIFICADO ---
         let ratingsData = { average: 0, reviews: [] };
         try {
             ratingsData = await API.getSeriesRatings(seriesId);
-        } catch (e) { 
-            console.error("Sem avaliações locais", e); 
-        }
+        } catch (e) { console.error("Sem avaliações locais", e); }
 
-        const averageValue = parseFloat(ratingsData?.average || 0);
-        const communityAvg = averageValue.toFixed(1);
+        const communityAvg = parseFloat(ratingsData?.average || 0).toFixed(1);
 
         container.innerHTML = `
             <div class="backdrop-container">
@@ -223,30 +147,35 @@ async function showSeriesDetail(seriesId) {
     }
 }
 
-// Definir avaliação por estrelas
-function setRating(rating) {
-    document.getElementById('ratingValue').value = rating;
-    const stars = document.querySelectorAll('#ratingStars .star');
-    stars.forEach((star, index) => {
-        star.classList.toggle('active', index < rating);
-    });
-}
-
-// Submeter avaliação
+// Submeter avaliação - CORRIGIDO para enviar objeto seriesData
 async function submitRating(event, seriesId) {
     event.preventDefault();
     const form = event.target;
     const ratingValue = document.getElementById('ratingValue').value;
     const reviewText = form.review.value;
     const watchStatus = form.status.value;
+    const s = window.currentViewingSeries; // Pegamos os dados carregados em showSeriesDetail
 
     if (!ratingValue || ratingValue == "0") {
         alert("Por favor, selecione uma nota antes de salvar.");
         return;
     }
 
+    // Criamos o objeto completo que o backend espera
+    const ratingPayload = {
+        seriesId: seriesId,
+        rating: ratingValue,
+        review: reviewText,
+        status: watchStatus,
+        title: s.name,
+        poster: s.poster_path,
+        backdrop: s.backdrop_path,
+        overview: s.overview,
+        category: (s.genres && s.genres.length > 0) ? s.genres[0].name : 'Série'
+    };
+
     try {
-        const data = await API.addRating(seriesId, ratingValue, reviewText, watchStatus);
+        const data = await API.addRating(ratingPayload);
         if (data.success) {
             alert('Avaliação salva com sucesso!');
             showSeriesDetail(seriesId); 
@@ -258,13 +187,11 @@ async function submitRating(event, seriesId) {
         alert('Erro de conexão com o servidor.');
     }
 }
-window.submitRating = submitRating;
 
-// CARREGAR ATIVIDADE RECENTE
+// Renderizar atividade recente com busca de dados paralela
 async function loadRecentActivity() {
     const container = document.getElementById('activityFeed'); 
     if (!container) return;
-    container.innerHTML = '<div class="loading">Carregando...</div>';
     
     try {
         const activities = await API.getRecentActivity();
@@ -274,81 +201,43 @@ async function loadRecentActivity() {
         }
         
         container.innerHTML = '';
-        const activityPromises = activities.map(async (activity) => {
-            try {
-                const series = await TMDB_API.getSeriesDetails(activity.series_id);
-                return series ? { activity, series } : null;
-            } catch (e) { return null; }
-        });
-
-        const results = await Promise.all(activityPromises);
-        results.forEach(item => {
-            if(item) {
-                const { activity, series } = item;
-                const activityItem = document.createElement('div');
-                activityItem.className = 'activity-item';
-                activityItem.onclick = () => showSeriesDetail(activity.series_id);
-                
-                const rating = Math.round(activity.rating || 0);
-                const userAvatar = activity.avatar && activity.avatar.startsWith('http') 
-                    ? activity.avatar : `/uploads/${activity.avatar || 'default-avatar.png'}`;
-                
-                activityItem.innerHTML = `
-                    <img src="${userAvatar}" class="activity-avatar" onerror="this.src='/uploads/default-avatar.png'">
-                    <div class="activity-content">
-                        <div><span class="activity-username">${activity.username}</span> avaliou <strong>${series.name}</strong></div>
-                        <div class="activity-text">
-                            <span style="color: #ffc107;">${'★'.repeat(rating)}${'☆'.repeat(5 - rating)}</span>
-                            ${activity.review ? ` - "${activity.review.substring(0, 60)}..."` : ''}
-                        </div>
-                        <div class="activity-date">${new Date(activity.created_at).toLocaleDateString('pt-BR')}</div>
+        activities.forEach(activity => {
+            const activityItem = document.createElement('div');
+            activityItem.className = 'activity-item';
+            activityItem.onclick = () => showSeriesDetail(activity.series_id);
+            
+            const rating = Math.round(activity.rating || 0);
+            const userAvatar = activity.avatar && activity.avatar.startsWith('http') 
+                ? activity.avatar : `/uploads/${activity.avatar || 'default-avatar.png'}`;
+            
+            activityItem.innerHTML = `
+                <img src="${userAvatar}" class="activity-avatar" onerror="this.src='/uploads/default-avatar.png'">
+                <div class="activity-content">
+                    <div><span class="activity-username">${activity.username}</span> avaliou <strong>${activity.title || 'Série'}</strong></div>
+                    <div class="activity-text">
+                        <span style="color: #ffc107;">${'★'.repeat(rating)}${'☆'.repeat(5 - rating)}</span>
+                        ${activity.review ? ` - "${activity.review.substring(0, 60)}..."` : ''}
                     </div>
-                `;
-                container.appendChild(activityItem);
-            }
+                    <div class="activity-date">${new Date(activity.created_at).toLocaleDateString('pt-BR')}</div>
+                </div>
+            `;
+            container.appendChild(activityItem);
         });
     } catch (error) {
         container.innerHTML = '<p class="placeholder-text">Erro ao carregar atividades</p>';
     }
 }
 
-// Funções de busca
-function heroSearchSeries(event) {
-    if (event.key === 'Enter') {
-        const query = event.target.value;
-        if (query) {
-            window.location.hash = '#search';
-            setTimeout(() => {
-                const input = document.getElementById('searchInput');
-                if(input) { input.value = query; performSearch(); }
-            }, 100);
-        }
-    }
+// Funções de utilidade e eventos
+function setRating(rating) {
+    document.getElementById('ratingValue').value = rating;
+    const stars = document.querySelectorAll('#ratingStars .star');
+    stars.forEach((star, index) => {
+        star.classList.toggle('active', index < rating);
+    });
 }
 
 function searchSeries(event) { if (event.key === 'Enter') performSearch(); }
-window.heroSearchSeries = heroSearchSeries;
+window.submitRating = submitRating;
+window.setRating = setRating;
 window.searchSeries = searchSeries;
-
-// --- SEÇÕES ESPECÍFICAS ---
-async function loadAnimeSection() {
-    const container = document.getElementById('animeSeries'); 
-    if (!container) return;
-    container.innerHTML = '<div class="loading">Carregando animes...</div>';
-    try {
-        const data = await TMDB_API.getAnimes();
-        container.innerHTML = ''; 
-        data.results.slice(0, 12).forEach(series => container.appendChild(renderSeriesCard(series)));
-    } catch (error) { container.innerHTML = '<p>Erro ao carregar animes</p>'; }
-}
-
-async function loadNewReleasesSection() {
-    const container = document.getElementById('newSeries'); 
-    if (!container) return;
-    container.innerHTML = '<div class="loading">Carregando novidades...</div>';
-    try {
-        const data = await TMDB_API.getRecentReleases();
-        container.innerHTML = '';
-        data.results.slice(0, 12).forEach(series => container.appendChild(renderSeriesCard(series)));
-    } catch (error) { container.innerHTML = '<p>Erro ao carregar novidades</p>'; }
-}
