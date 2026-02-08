@@ -207,7 +207,8 @@ async function loadRecentActivity() {
         activities.forEach(activity => {
             const activityItem = document.createElement('div');
             activityItem.className = 'activity-item';
-            activityItem.onclick = () => showSeriesDetail(activity.series_id);
+            // usar tmdb_id (id da TMDB) ao abrir detalhes, não o id interno do DB
+            activityItem.onclick = () => showSeriesDetail(activity.tmdb_id || activity.series_id);
             
             const rating = Math.round(activity.rating || 0);
             const userAvatar = activity.avatar && activity.avatar.startsWith('http') 
