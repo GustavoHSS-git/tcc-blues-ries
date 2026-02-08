@@ -158,7 +158,7 @@ async function submitRating(event, seriesId) {
     const s = window.currentViewingSeries; // Pegamos os dados carregados em showSeriesDetail
 
     if (!ratingValue || ratingValue == "0") {
-        alert("Por favor, selecione uma nota antes de salvar.");
+        notifyWarning("Por favor, selecione uma nota antes de salvar.", "Avaliação Incompleta");
         return;
     }
 
@@ -178,14 +178,14 @@ async function submitRating(event, seriesId) {
     try {
         const data = await API.addRating(ratingPayload);
         if (data.success) {
-            alert('Avaliação salva com sucesso!');
+            notifySuccess('Sua avaliação foi salva com sucesso!', '✓ Avaliação Salva');
             showSeriesDetail(seriesId); 
         } else {
-            alert('Erro ao salvar: ' + (data.error || 'Erro desconhecido'));
+            notifyError(data.error || 'Erro desconhecido', '✗ Erro ao Salvar');
         }
     } catch (error) {
         console.error('Erro ao salvar avaliação:', error);
-        alert('Erro de conexão com o servidor.');
+        notifyError('Erro de conexão com o servidor.', '✗ Erro de Conexão');
     }
 }
 

@@ -166,14 +166,14 @@ async function handleAvatarUpload(event) {
     try {
         const data = await API.uploadAvatar(file);
         if (data.success) {
-            alert('Avatar atualizado com sucesso!');
+            notifySuccess('Avatar atualizado com sucesso!', '✓ Avatar Salvo');
             location.reload(); 
         } else {
-            alert('Erro: ' + (data.error || 'Falha no upload'));
+            notifyError(data.error || 'Falha no upload', '✗ Erro ao Fazer Upload');
             btn.innerHTML = originalText;
         }
     } catch (error) {
-        alert('Erro ao conectar com o servidor');
+        notifyError('Erro ao conectar com o servidor', '✗ Erro de Conexão');
         btn.innerHTML = originalText;
     }
 }
@@ -193,10 +193,12 @@ async function saveBio() {
         });
         const data = await response.json();
         if (data.success) {
-            alert('Bio atualizada!');
+            notifySuccess('Bio atualizada com sucesso!', '✓ Perfil Atualizado');
+        } else {
+            notifyError('Erro ao salvar bio', '✗ Erro ao Salvar');
         }
     } catch (error) {
-        alert('Erro ao salvar bio');
+        notifyError('Erro ao conectar com o servidor', '✗ Erro de Conexão');
     } finally {
         btn.disabled = false;
         btn.innerText = 'Salvar Bio';

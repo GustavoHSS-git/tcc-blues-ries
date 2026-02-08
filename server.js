@@ -222,6 +222,7 @@ app.get('/api/rating/:tmdb_id', requireAuth, async (req, res) => {
         );
         res.json({ rating: result.rows[0] || null });
     } catch (err) {
+        console.error('Erro ao buscar avaliação:', err);
         res.status(500).json({ error: 'Erro ao buscar avaliação' });
     }
 });
@@ -244,12 +245,20 @@ app.get('/api/series/:tmdb_id/ratings', async (req, res) => {
             JOIN series s ON r.series_id = s.id 
             WHERE s.tmdb_id = $1`, [tmdb_id]);
         
+        const avgRating = stats.rows[0] && stats.rows[0].average 
+            ? stats.rows[0].average.toFixed(1) 
+            : "0.0";
+        const count = stats.rows[0] && stats.rows[0].count 
+            ? stats.rows[0].count 
+            : 0;
+        
         res.json({
-            average: stats.rows[0].average ? stats.rows[0].average.toFixed(1) : "0.0",
-            count: stats.rows[0].count || 0,
+            average: avgRating,
+            count: count,
             reviews: reviews.rows
         });
     } catch (err) {
+        console.error('Erro ao buscar avaliações:', err);
         res.status(500).json({ error: 'Erro ao buscar avaliações' });
     }
 });
