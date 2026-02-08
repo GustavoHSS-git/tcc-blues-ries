@@ -418,6 +418,20 @@ body {
     position: relative;
 }
 
+.backdrop-container {
+    width: 100%;
+    height: 350px;
+    overflow: hidden;
+    position: relative;
+}
+
+.backdrop-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
 .series-backdrop {
     width: 100%;
     height: 400px;
@@ -450,7 +464,10 @@ body {
 }
 
 .series-detail-poster {
-    width: 300px;
+    width: 280px;
+    height: auto;
+    aspect-ratio: 2/3;
+    object-fit: cover;
     border-radius: 12px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
 }
