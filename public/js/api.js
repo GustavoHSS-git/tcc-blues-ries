@@ -54,7 +54,11 @@ const TMDB_API = {
         }
     },
 
+<<<<<<< HEAD
     // Buscar Novidades (Séries que estrearam recentemente)
+=======
+    // Buscar Novidades
+>>>>>>> 2797ee0922b782881b980ce503facf713d049237
     getRecentReleases: async () => {
         try {
             const response = await fetch(
@@ -67,7 +71,11 @@ const TMDB_API = {
         }
     },
 
+<<<<<<< HEAD
     // Buscar por Gênero específico
+=======
+    // Buscar por Gênero
+>>>>>>> 2797ee0922b782881b980ce503facf713d049237
     getSeriesByGenre: async (genreId) => {
         try {
             const response = await fetch(
@@ -80,7 +88,11 @@ const TMDB_API = {
         }
     },
 
+<<<<<<< HEAD
     // Buscar séries (Barra de busca)
+=======
+    // Buscar séries
+>>>>>>> 2797ee0922b782881b980ce503facf713d049237
     searchSeries: async (query) => {
         try {
             const response = await fetch(
@@ -113,8 +125,14 @@ const TMDB_API = {
     }
 };
 
+<<<<<<< HEAD
 // ==========================================
 // API: Funções do seu Banco de Dados (Login, Reviews, Atividade)
+=======
+
+// ==========================================
+// API: Banco de Dados (Node / Postgres)
+>>>>>>> 2797ee0922b782881b980ce503facf713d049237
 // ==========================================
 const API = {
     // Autenticação
@@ -146,10 +164,17 @@ const API = {
         return await response.json();
     },
 
+<<<<<<< HEAD
     // Perfil do Usuário
     getUser: async (userId) => {
         const response = await fetch(`${APP_CONFIG.API_BASE}/user/${userId}`);
         if (!response.ok) return null; 
+=======
+    // Perfil
+    getUser: async (userId) => {
+        const response = await fetch(`${APP_CONFIG.API_BASE}/user/${userId}`);
+        if (!response.ok) return null;
+>>>>>>> 2797ee0922b782881b980ce503facf713d049237
         return await response.json();
     },
 
@@ -172,6 +197,7 @@ const API = {
         return await response.json();
     },
 
+<<<<<<< HEAD
    // Adicione os campos extras no envio
     addRating: async (seriesData) => {
     const response = await fetch(`${APP_CONFIG.API_BASE}/rating`, {
@@ -184,6 +210,22 @@ const API = {
 
     getRating: async (seriesId) => {
         const response = await fetch(`${APP_CONFIG.API_BASE}/rating/${seriesId}`);
+=======
+    // =========================
+    // AVALIAÇÕES (CORRIGIDO)
+    // =========================
+    addRating: async (tmdb_id, rating, review, status) => {
+        const response = await fetch(`${APP_CONFIG.API_BASE}/rating`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tmdb_id, rating, review, status })
+        });
+        return await response.json();
+    },
+
+    getRating: async (tmdb_id) => {
+        const response = await fetch(`${APP_CONFIG.API_BASE}/rating/${tmdb_id}`);
+>>>>>>> 2797ee0922b782881b980ce503facf713d049237
         return await response.json();
     },
 
@@ -192,12 +234,21 @@ const API = {
         return await response.json();
     },
 
+<<<<<<< HEAD
     getSeriesRatings: async (seriesId) => {
         const response = await fetch(`${APP_CONFIG.API_BASE}/series/${seriesId}/ratings`);
         return await response.json();
     },
 
     // Atividades da Comunidade
+=======
+    getSeriesRatings: async (tmdb_id) => {
+        const response = await fetch(`${APP_CONFIG.API_BASE}/series/${tmdb_id}/ratings`);
+        return await response.json();
+    },
+
+    // Atividade recente
+>>>>>>> 2797ee0922b782881b980ce503facf713d049237
     getRecentActivity: async () => {
         const response = await fetch(`${APP_CONFIG.API_BASE}/recent-activity`);
         return await response.json();

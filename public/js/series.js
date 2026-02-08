@@ -25,6 +25,7 @@ function renderSeriesCard(series) {
     return card;
 }
 
+<<<<<<< HEAD
 // Função auxiliar para renderizar múltiplas séries em um container
 function renderSeries(seriesList, containerId) {
     const container = document.getElementById(containerId);
@@ -35,6 +36,8 @@ function renderSeries(seriesList, containerId) {
     });
 }
 
+=======
+>>>>>>> 2797ee0922b782881b980ce503facf713d049237
 // Carregar séries populares
 async function loadPopularSeries() {
     const container = document.getElementById('popularSeries');
@@ -52,6 +55,7 @@ async function loadPopularSeries() {
     }
 }
 
+<<<<<<< HEAD
  // Carregar Tudo (Animes, Novidades e Populares) - Versão Corrigida para TMDB
 async function fetchAndDisplaySeries() {
     try {
@@ -68,6 +72,33 @@ async function fetchAndDisplaySeries() {
 }
 
 
+=======
+// Carregar Tudo (Animes, Novidades e Populares)
+// ✅ CORREÇÃO AQUI (SÓ ISSO)
+async function fetchAndDisplaySeries() {
+    try {
+        const allSeries = await API.getSeries();
+
+        // 1. Animes
+        const animes = allSeries.filter(s =>
+            s.category &&
+            s.category.toString().toLowerCase().includes('anime')
+        );
+        renderSeries(animes.slice(0, 12), 'animeSeries');
+
+        // 2. Novidades
+        const news = [...allSeries].reverse().slice(0, 10);
+        renderSeries(news, 'newSeries');
+
+        // 3. Populares
+        renderSeries(allSeries.slice(0, 12), 'popularSeries');
+
+    } catch (error) {
+        console.error("Erro ao carregar séries:", error);
+    }
+}
+
+>>>>>>> 2797ee0922b782881b980ce503facf713d049237
 // Carregar top séries
 async function loadTopRatedSeries() {
     const container = document.getElementById('topRatedSeries');
@@ -192,6 +223,7 @@ async function showSeriesDetail(seriesId) {
             } catch (err) { console.error(err); }
         }
 
+<<<<<<< HEAD
         // --- TRATAMENTO DA MÉDIA UNIFICADO ---
         let ratingsData = { average: 0, reviews: [] };
 
@@ -208,6 +240,15 @@ async function showSeriesDetail(seriesId) {
         const communityAvg = averageValue.toFixed(1);
 
         // Agora você pode usar communityAvg com segurança no seu innerHTML
+=======
+        // --- TRATAMENTO DA MÉDIA 
+        const ratingsData = await API.getSeriesRatings(seriesId);
+        
+        // Transformamos em número primeiro, se for nulo vira 0
+        const communityAvgRaw = ratingsData && ratingsData.average ? parseFloat(ratingsData.average) : 0;
+        // Agora o toFixed(1) nunca vai falhar
+        const communityAvg = communityAvgRaw.toFixed(1);
+>>>>>>> 2797ee0922b782881b980ce503facf713d049237
 
         container.innerHTML = `
             <div class="backdrop-container">
@@ -257,6 +298,7 @@ function setRating(rating) {
     });
 }
 
+<<<<<<< HEAD
 // Submeter avaliação - Corrigido para bater com api.js e server.js
 async function submitRating(event, seriesId) {
     event.preventDefault();
@@ -294,6 +336,24 @@ async function submitRating(event, seriesId) {
 }
 // Torna a função global para o formulário achar
 window.submitRating = submitRating;
+=======
+// Submeter avaliação
+async function submitRating(event, seriesId) {
+    event.preventDefault();
+    const form = event.target;
+    const rating = form.rating.value;
+    const review = form.review.value;
+    const status = form.status.value;
+
+    try {
+        const data = await API.addRating(seriesId, rating, review, status);
+        if (data.success) {
+            alert('Avaliação salva!');
+            showSeriesDetail(seriesId);
+        }
+    } catch (error) { alert('Erro ao salvar.'); }
+}
+>>>>>>> 2797ee0922b782881b980ce503facf713d049237
 
 // CARREGAR ATIVIDADE RECENTE (CORRIGIDO PARA OTIMIZAÇÃO E POSTGRES)
 async function loadRecentActivity() {
@@ -397,15 +457,24 @@ window.searchSeries = searchSeries;
 
 // --- CARREGAR ANIMES ---
 async function loadAnimeSection() {
+<<<<<<< HEAD
     const container = document.getElementById('animeSeries'); 
     if (!container) return;
     container.innerHTML = '<div class="loading">Carregando animes...</div>';
+=======
+    const container = document.getElementById('animeSeries'); // Alterado para animeSeries
+    if (!container) return;
+>>>>>>> 2797ee0922b782881b980ce503facf713d049237
 
     try {
         const data = await TMDB_API.getAnimes();
         container.innerHTML = ''; 
         
+<<<<<<< HEAD
         data.results.slice(0, 12).forEach(series => {
+=======
+        data.results.forEach(series => {
+>>>>>>> 2797ee0922b782881b980ce503facf713d049237
             container.appendChild(renderSeriesCard(series));
         });
     } catch (error) {
@@ -415,18 +484,30 @@ async function loadAnimeSection() {
 
 // --- CARREGAR NOVIDADES ---
 async function loadNewReleasesSection() {
+<<<<<<< HEAD
     const container = document.getElementById('newSeries'); 
     if (!container) return;
     container.innerHTML = '<div class="loading">Carregando novidades...</div>';
+=======
+    const container = document.getElementById('newSeries'); // Mantido como newSeries
+    if (!container) return;
+>>>>>>> 2797ee0922b782881b980ce503facf713d049237
 
     try {
         const data = await TMDB_API.getRecentReleases();
         container.innerHTML = '';
+<<<<<<< HEAD
         data.results.slice(0, 12).forEach(series => {
+=======
+        data.results.forEach(series => {
+>>>>>>> 2797ee0922b782881b980ce503facf713d049237
             container.appendChild(renderSeriesCard(series));
         });
     } catch (error) {
         console.error("Erro ao carregar novidades:", error);
+<<<<<<< HEAD
         container.innerHTML = '<p>Erro ao carregar novidades</p>';
+=======
+>>>>>>> 2797ee0922b782881b980ce503facf713d049237
     }
 }

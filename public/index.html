@@ -33,7 +33,11 @@
                 </div>
                 <div class="user-menu" id="userMenu" style="display: none;">
                     <div class="user-avatar" onclick="toggleUserDropdown()">
+<<<<<<< HEAD
                         <img src="uploads/default-avatar.png" alt="Avatar" id="headerAvatar">
+=======
+                        <img src="/uploads/default-avatar.png" alt="Avatar" id="headerAvatar">
+>>>>>>> 2797ee0922b782881b980ce503facf713d049237
                         <span id="headerUsername"></span>
                     </div>
                     <div class="user-dropdown" id="userDropdown">
@@ -56,13 +60,21 @@
                     </div>
                 </div>
 
+<<<<<<< HEAD
                 
+=======
+>>>>>>> 2797ee0922b782881b980ce503facf713d049237
                 <section class="series-section">
                     <h3><i class="fas fa-bolt"></i>Novidades</h3>
                     <div class="series-grid carousel-grid" id="newSeries">
                         <div class="loading">Carregando Novidades...</div>
+<<<<<<< HEAD
                         </div>
                  </section>
+=======
+                    </div>
+                </section>
+>>>>>>> 2797ee0922b782881b980ce503facf713d049237
 
                 <section class="series-section">
                     <h3>Séries Populares</h3>
@@ -78,7 +90,10 @@
                     </div>
                 </section>
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 2797ee0922b782881b980ce503facf713d049237
                 <section class="series-section">
                     <h3>Top Avaliadas</h3>
                     <div class="series-grid" id="topRatedSeries">
@@ -86,7 +101,10 @@
                     </div>
                 </section>
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 2797ee0922b782881b980ce503facf713d049237
                 <section class="activity-section">
                     <h3>Atividades Recentes</h3>
                     <div class="activity-feed" id="activityFeed">
@@ -173,10 +191,15 @@
     </div>
 
     <script>
+<<<<<<< HEAD
         // --- VACINA: PREVINE ERROS DE VARIÁVEIS NÃO DEFINIDAS ---
         window.clackSound = { play: () => {}, pause: () => {}, currentTime: 0 };
 
         // --- LÓGICA DO LOADING SCREEN (SIMPLIFICADA) ---
+=======
+        window.clackSound = { play: () => {}, pause: () => {}, currentTime: 0 };
+
+>>>>>>> 2797ee0922b782881b980ce503facf713d049237
         const topo = document.querySelector('.topo');
         const loadingScreen = document.getElementById('loading-screen');
 
@@ -184,7 +207,10 @@
             topo.addEventListener('animationend', () => {
                 setTimeout(() => {
                     loadingScreen.classList.add('fade-out');
+<<<<<<< HEAD
                     // Libera o scroll e remove o loading do DOM após a transição
+=======
+>>>>>>> 2797ee0922b782881b980ce503facf713d049237
                     setTimeout(() => { 
                         document.body.style.overflow = 'auto'; 
                         loadingScreen.style.display = 'none';
@@ -192,7 +218,10 @@
                 }, 400);
             });
         } else {
+<<<<<<< HEAD
             // Fallback caso a animação falhe
+=======
+>>>>>>> 2797ee0922b782881b980ce503facf713d049237
             loadingScreen.style.display = 'none';
             document.body.style.overflow = 'auto';
         }
@@ -205,4 +234,8 @@
     <script src="js/profile.js"></script>
     <script src="js/app.js"></script>
 </body>
+<<<<<<< HEAD
 </html>
+=======
+</html>
+>>>>>>> 2797ee0922b782881b980ce503facf713d049237

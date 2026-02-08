@@ -21,7 +21,10 @@
     "express": "^4.18.2",
     "express-session": "^1.17.3",
     "multer": "^1.4.5-lts.1",
+<<<<<<< HEAD
     "node.js": "^0.0.1-security",
+=======
+>>>>>>> 2797ee0922b782881b980ce503facf713d049237
     "pg": "^8.18.0",
     "sqlite3": "^5.1.6"
   },
