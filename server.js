@@ -284,17 +284,3 @@ app.get('*', (req, res) => {
 });
 
 app.listen(PORT, () => console.log(`🚀 Servidor rodando na porta ${PORT}`));
-
-const { Pool } = require('pg');
-// Substitua pela sua URL de conexão real
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL, 
-});
-
-pool.query('SELECT NOW()', (err, res) => {
-  if (err) {
-    console.error('❌ Erro ao conectar no Postgres:', err.stack);
-  } else {
-    console.log('✅ Conexão com o Banco de Dados bem-sucedida!');
-  }
-});
