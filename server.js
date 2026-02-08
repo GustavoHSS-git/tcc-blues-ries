@@ -232,7 +232,8 @@ app.get('/api/series/:tmdb_id/ratings', async (req, res) => {
     const tmdb_id = req.params.tmdb_id;
     try {
         const reviews = await db.query(`
-            SELECT r.*, u.username, u.avatar, s.title, s.poster, s.tmdb_id
+            SELECT r.id, r.user_id, r.rating, r.review, r.status, r.created_at, 
+                   u.username, u.avatar, s.title, s.poster, s.tmdb_id
             FROM ratings r 
             JOIN users u ON r.user_id = u.id 
             JOIN series s ON r.series_id = s.id 
@@ -240,7 +241,7 @@ app.get('/api/series/:tmdb_id/ratings', async (req, res) => {
             ORDER BY r.created_at DESC`, [tmdb_id]);
             
         const stats = await db.query(`
-            SELECT AVG(rating)::FLOAT as average, COUNT(*)::INT as count 
+            SELECT AVG(r.rating)::FLOAT as average, COUNT(*)::INT as count 
             FROM ratings r 
             JOIN series s ON r.series_id = s.id 
             WHERE s.tmdb_id = $1`, [tmdb_id]);
@@ -274,7 +275,8 @@ app.post('/api/rating', requireAuth, async (req, res) => {
         // Esta rota usa a função SQL add_or_update_rating com o novo schema
         const result = await db.query(`
             SELECT * FROM add_or_update_rating(
-                $1, $2, $3, $4, $5, $6, $7, $8::DATE, $9::INT, $10::NUMERIC, $11, $12
+                $1::INT, $2::INT, $3::TEXT, $4::TEXT, $5::TEXT, $6::TEXT, $7::TEXT, 
+                $8::DATE, $9::INT, $10::NUMERIC, $11::TEXT, $12::TEXT
             )`, 
         [
             req.session.userId,           // p_user_id
